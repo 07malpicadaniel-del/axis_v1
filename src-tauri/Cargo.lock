@@ -98,6 +98,7 @@ dependencies = [
  "axis-core",
  "axis-module-library",
  "axis-module-lifestyle",
+ "axis-module-repos",
  "serde",
  "serde_json",
  "tauri",
@@ -125,6 +126,17 @@ dependencies = [
  "tauri",
  "uuid",
  "walkdir",
+]
+
+[[package]]
+name = "axis-module-repos"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "tauri",
+ "uuid",
 ]
 
 [[package]]

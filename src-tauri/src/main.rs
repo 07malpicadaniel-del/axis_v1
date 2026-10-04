@@ -2,11 +2,13 @@
 
 use axis_module_lifestyle::commands::LifestyleState;
 use axis_module_library::commands::LibraryState;
+use axis_module_repos::commands::ReposState;
 
 fn main() {
     tauri::Builder::default()
         .manage(LifestyleState::default())
         .manage(LibraryState::default())
+        .manage(ReposState::default())
         .invoke_handler(tauri::generate_handler![
             axis_core::commands::check_core_status,
             // Lifestyle: Tasks
@@ -31,11 +33,17 @@ fn main() {
             axis_module_lifestyle::commands::lifestyle_create_saving_goal,
             axis_module_lifestyle::commands::lifestyle_contribute_saving_goal,
             axis_module_lifestyle::commands::lifestyle_delete_saving_goal,
-            // Library Commands
+            // Library
             axis_module_library::commands::library_get_items,
             axis_module_library::commands::library_create_item,
             axis_module_library::commands::library_update_item,
             axis_module_library::commands::library_delete_item,
+            // Local Repos
+            axis_module_repos::commands::repos_get_list,
+            axis_module_repos::commands::repos_add_repo,
+            axis_module_repos::commands::repos_delete_repo,
+            axis_module_repos::commands::repos_get_details,
+            axis_module_repos::commands::repos_commit_and_push,
         ])
         .run(tauri::generate_context!())
         .expect("Error al ejecutar el núcleo de AXIS");

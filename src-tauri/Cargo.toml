@@ -2,7 +2,8 @@
 members = [
     "crates/axis-core",
     "crates/axis-module-lifestyle",
-    "crates/axis-module-library"
+    "crates/axis-module-library",
+    "crates/axis-module-repos"
 ]
 resolver = "2"
 
@@ -21,3 +22,4 @@ serde_json = "1.0"
 axis-core = { path = "crates/axis-core" }
 axis-module-lifestyle = { path = "crates/axis-module-lifestyle" }
 axis-module-library = { path = "crates/axis-module-library" }
+axis-module-repos = { path = "crates/axis-module-repos" }
