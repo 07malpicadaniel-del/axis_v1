@@ -1,0 +1,23 @@
+[workspace]
+members = [
+    "crates/axis-core",
+    "crates/axis-module-lifestyle",
+    "crates/axis-module-library"
+]
+resolver = "2"
+
+[package]
+name = "axis-desktop"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+axis-core = { path = "crates/axis-core" }
+axis-module-lifestyle = { path = "crates/axis-module-lifestyle" }
+axis-module-library = { path = "crates/axis-module-library" }

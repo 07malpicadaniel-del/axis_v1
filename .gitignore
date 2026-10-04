@@ -1,0 +1,21 @@
+# Node / pnpm
+node_modules/
+dist/
+.pnpm-debug.log*
+
+# Rust / Cargo / Tauri
+target/
+src-tauri/target/
+crates/**/target/
+
+# Entornos y temporales
+.DS_Store
+*.local
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
