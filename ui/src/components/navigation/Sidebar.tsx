@@ -1,7 +1,8 @@
 import React from 'react';
-import { Activity, BookOpen, Settings } from 'lucide-react';
+import { Activity, BookOpen, FolderGit2, Settings } from 'lucide-react';
+import { Brain } from 'lucide-react';
 
-export type ProjectId = 'lifestyle' | 'library';
+export type ProjectId = 'lifestyle' | 'library' | 'bob' | 'repos';
 
 interface SidebarProps {
   activeProject: ProjectId;
@@ -16,7 +17,9 @@ interface ProjectItem {
 
 const projects: ProjectItem[] = [
   { id: 'lifestyle', label: 'Lifestyle', icon: Activity },
-  { id: 'library', label: 'Library', icon: BookOpen },
+  { id: 'bob', label: 'BOB Oráculo', icon: Brain },
+    { id: 'library', label: 'Library', icon: BookOpen },
+  { id: 'repos', label: 'Local Repo', icon: FolderGit2 },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeProject, onSelectProject }) => {

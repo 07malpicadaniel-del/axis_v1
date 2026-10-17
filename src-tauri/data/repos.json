@@ -3,10 +3,10 @@
     "id": "1eaeeb4f-263f-4db0-9bdf-f87286e63415",
     "name": "axis_v1",
     "path": "/home/daniel/axis_v1/src-tauri",
-    "current_branch": "main",
-    "is_clean": false,
-    "last_commit": "feat(core): implement lifestyle (tasks, habits, schedule, finances) and library module with monochromatic ui",
-    "last_commit_time": "15 minutes ago",
+    "current_branch": "detached",
+    "is_clean": true,
+    "last_commit": "No commits found",
+    "last_commit_time": "Unknown",
     "tag": "Rust / React"
   }
 ]
