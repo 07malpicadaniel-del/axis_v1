@@ -45,8 +45,8 @@
     "path": "/home/daniel/proyectos/axis_v1",
     "current_branch": "main",
     "is_clean": false,
-    "last_commit": "bob module",
-    "last_commit_time": "9 hours ago",
+    "last_commit": "mejora en UI de bob module",
+    "last_commit_time": "27 minutes ago",
     "tag": "Rust / Tauri"
   },
   {
@@ -54,9 +54,9 @@
     "name": "bob_engine",
     "path": "/home/daniel/proyectos/bob_engine",
     "current_branch": "main",
-    "is_clean": false,
-    "last_commit": "feat(alfa-v2.0): agente autonomo completo con arbol binario ABE, muestreo REM dinamico, herramientas PC y busqueda web",
-    "last_commit_time": "9 hours ago",
+    "is_clean": true,
+    "last_commit": "cerebro/hipocampo de vectores",
+    "last_commit_time": "28 minutes ago",
     "tag": "Rust"
   },
   {

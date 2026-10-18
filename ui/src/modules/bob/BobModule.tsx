@@ -23,6 +23,11 @@ import {
   Maximize2,
   Search,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Trash2,
+  Edit3,
+  Check,
 } from "lucide-react";
 
 interface CustomIslandSummary {
@@ -99,6 +104,35 @@ interface BobChatMessage {
   mode?: string;
 }
 
+interface ChatSession {
+  id: string;
+  title: string;
+  island: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: BobChatMessage[];
+}
+
+const STORAGE_KEY = "axis_bob_chat_sessions_v2";
+
+const createDefaultSession = (island: string = "global"): ChatSession => ({
+  id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  title: "Nueva conversación",
+  island,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  messages: [
+    {
+      role: "bob",
+      content:
+        island === "global"
+          ? "Oráculo BOB v2.0 acoplado a AXIS. Estás en un hilo de conversación limpio conectado al Hipocampo 4D Global. Selecciona un modo cognitivo o envíame una instrucción."
+          : `Hilo de conversación limpio vinculado a la Isla Aislada [${island.toUpperCase()}]. El 100% de los recuerdos de este chat están confinados a este dominio.`,
+      island: island === "global" ? "CoreRules" : `Isla:${island}`,
+    },
+  ],
+});
+
 export const BobModule: React.FC = () => {
   const [online, setOnline] = useState<boolean>(false);
   const [waking, setWaking] = useState<boolean>(false);
@@ -111,6 +145,7 @@ export const BobModule: React.FC = () => {
   const [openThinkIdx, setOpenThinkIdx] = useState<number | null>(null);
 
   const [viewLayout, setViewLayout] = useState<"chat" | "split" | "graph">("split");
+  const [showChatSidebar, setShowChatSidebar] = useState<boolean>(true);
 
   const [customIslands, setCustomIslands] = useState<CustomIslandSummary[]>([]);
   const [activeIsland, setActiveIsland] = useState<string>("global");
@@ -118,13 +153,54 @@ export const BobModule: React.FC = () => {
   const [newIslandName, setNewIslandName] = useState<string>("");
   const [newIslandDesc, setNewIslandDesc] = useState<string>("");
 
+  // Gestión de Múltiples Chats (Estilo Gemini / Claude / GPT)
+  const [sessions, setSessions] = useState<ChatSession[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {
+      // Ignorar errores de parseo
+    }
+    return [createDefaultSession("global")];
+  });
+
+  const [activeSessionId, setActiveSessionId] = useState<string>(() => {
+    return sessions[0]?.id || "";
+  });
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>("");
+  const [chatFilterQuery, setChatFilterQuery] = useState<string>("");
+
+  // Persistir chats automáticamente en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    } catch {
+      // Silencioso si excede cuota
+    }
+  }, [sessions]);
+
+  const activeSession =
+    sessions.find((s) => s.id === activeSessionId) || sessions[0];
+  const currentMessages = activeSession?.messages || [];
+
+  // Estado del Grafo Obsidian 4D
   const [graphData, setGraphData] = useState<HippocampusGraphSnapshot | null>(null);
   const [graphSearch, setGraphSearch] = useState<string>("");
   const [graphIslandFilter, setGraphIslandFilter] = useState<string>("ALL");
   const [showIslandDropdown, setShowIslandDropdown] = useState<boolean>(false);
   const [selectedSimNode, setSelectedSimNode] = useState<SimNode | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const [edgeFilter, setEdgeFilter] = useState<{ causal: boolean; semantic: boolean; island: boolean }>({
+  const [edgeFilter, setEdgeFilter] = useState<{
+    causal: boolean;
+    semantic: boolean;
+    island: boolean;
+  }>({
     causal: true,
     semantic: true,
     island: true,
@@ -133,7 +209,11 @@ export const BobModule: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simNodesRef = useRef<SimNode[]>([]);
   const simEdgesRef = useRef<GraphEdgeDto[]>([]);
-  const cameraRef = useRef<{ x: number; y: number; zoom: number }>({ x: 0, y: 0, zoom: 0.72 });
+  const cameraRef = useRef<{ x: number; y: number; zoom: number }>({
+    x: 0,
+    y: 0,
+    zoom: 0.72,
+  });
   const dragStateRef = useRef<{
     draggingNodeId: string | null;
     panning: boolean;
@@ -141,24 +221,84 @@ export const BobModule: React.FC = () => {
     lastY: number;
   }>({ draggingNodeId: null, panning: false, lastX: 0, lastY: 0 });
 
-  const [threadsByIsland, setThreadsByIsland] = useState<Record<string, BobChatMessage[]>>({
-    global: [
-      {
-        role: "bob",
-        content:
-          "Oráculo BOB v2.0 acoplado a AXIS. Mi Hipocampo 4D (768-dim HNSW + Hipergrafo Causal) está vinculado en vivo con el Mapa Sináptico estilo Obsidian. Haz clic o pasa el cursor sobre cualquier nodo del grafo para inspeccionar su tensor de 768 dimensiones, su decaimiento λ y sus aristas causales.",
-        island: "CoreRules",
-      },
-    ],
-  });
+  // Funciones de Gestión de Chats
+  const handleCreateNewChat = (targetIsland: string = activeIsland) => {
+    const newChat = createDefaultSession(targetIsland);
+    setSessions((prev) => [newChat, ...prev]);
+    setActiveSessionId(newChat.id);
+    setOpenThinkIdx(null);
+  };
 
-  const currentMessages = threadsByIsland[activeIsland] || [];
+  const handleSelectChat = (session: ChatSession) => {
+    setActiveSessionId(session.id);
+    setActiveIsland(session.island);
+    setGraphIslandFilter(
+      session.island === "global" ? "ALL" : `custom:${session.island}`
+    );
+    setOpenThinkIdx(null);
+  };
 
-  const appendMessageToIsland = (islandKey: string, msg: BobChatMessage) => {
-    setThreadsByIsland((prev) => ({
-      ...prev,
-      [islandKey]: [...(prev[islandKey] || []), msg],
-    }));
+  const handleDeleteChat = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSessions((prev) => {
+      const remaining = prev.filter((s) => s.id !== id);
+      if (remaining.length === 0) {
+        const fallback = createDefaultSession(activeIsland);
+        setActiveSessionId(fallback.id);
+        return [fallback];
+      }
+      if (activeSessionId === id) {
+        setActiveSessionId(remaining[0].id);
+        setActiveIsland(remaining[0].island);
+      }
+      return remaining;
+    });
+  };
+
+  const handleStartRename = (session: ChatSession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSessionId(session.id);
+    setEditingTitle(session.title);
+  };
+
+  const handleConfirmRename = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (editingTitle.trim()) {
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === id ? { ...s, title: editingTitle.trim() } : s
+        )
+      );
+    }
+    setEditingSessionId(null);
+  };
+
+  const appendMessageToSession = (
+    sessionId: string,
+    msg: BobChatMessage,
+    newIslandSlug?: string
+  ) => {
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id !== sessionId) return s;
+        // Auto-titular el chat con el primer mensaje del usuario
+        let updatedTitle = s.title;
+        if (
+          msg.role === "user" &&
+          (s.title === "Nueva conversación" || s.messages.length <= 1)
+        ) {
+          const clean = msg.content.replace(/\s+/g, " ").trim();
+          updatedTitle = clean.length > 34 ? `${clean.slice(0, 34)}...` : clean;
+        }
+        return {
+          ...s,
+          title: updatedTitle,
+          island: newIslandSlug || s.island,
+          updatedAt: Date.now(),
+          messages: [...s.messages, msg],
+        };
+      })
+    );
   };
 
   const fetchGraphSnapshot = async () => {
@@ -175,14 +315,21 @@ export const BobModule: React.FC = () => {
   };
 
   const rebuildPhysicsNodes = (snap: HippocampusGraphSnapshot) => {
-    const existingPos = new Map<string, { x: number; y: number; ax: number; ay: number }>();
+    const existingPos = new Map<
+      string,
+      { x: number; y: number; ax: number; ay: number }
+    >();
     for (const n of simNodesRef.current) {
-      existingPos.set(n.id, { x: n.x, y: n.y, ax: n.anchorX, ay: n.anchorY });
+      existingPos.set(n.id, {
+        x: n.x,
+        y: n.y,
+        ax: n.anchorX,
+        ay: n.anchorY,
+      });
     }
 
     const newSimNodes: SimNode[] = [];
     const totalIsl = Math.max(snap.islands.length, 1);
-    // Radio orbital amplio (460px) para que cada Isla forme su propia constelación bien separada
     const orbitRadius = 460;
 
     const islandCenters = new Map<string, { x: number; y: number }>();
@@ -210,7 +357,6 @@ export const BobModule: React.FC = () => {
       });
     });
 
-    // Agrupar nodos por isla para distribuirlos en anillos concéntricos limpios alrededor de su Isla madre
     const nodesByIsland = new Map<string, GraphNodeDto[]>();
     for (const n of snap.nodes) {
       const arr = nodesByIsland.get(n.island) || [];
@@ -225,7 +371,8 @@ export const BobModule: React.FC = () => {
         const ring = Math.floor(localIdx / 10);
         const posInRing = localIdx % 10;
         const itemsInRing = Math.min(10, count - ring * 10);
-        const angle = (2 * Math.PI * posInRing) / Math.max(itemsInRing, 1) + ring * 0.35;
+        const angle =
+          (2 * Math.PI * posInRing) / Math.max(itemsInRing, 1) + ring * 0.35;
         const dist = 125 + ring * 85;
 
         const targetX = center.x + Math.cos(angle) * dist;
@@ -280,7 +427,7 @@ export const BobModule: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Motor Físico Obsidian con Separación Garantizada y Etiquetas Anti-Solapamiento
+  // Motor Físico Obsidian 60 FPS
   useEffect(() => {
     if (viewLayout === "chat") return;
     let animationFrameId: number;
@@ -310,13 +457,16 @@ export const BobModule: React.FC = () => {
           ctx.fillStyle = "#09090b";
           ctx.fillRect(0, 0, width, height);
 
-          // Retícula de coordenadas
           ctx.strokeStyle = "rgba(39, 39, 42, 0.35)";
           ctx.lineWidth = 1;
           const gridStep = 60 * cameraRef.current.zoom;
           if (gridStep > 16) {
-            const offsetX = ((width / 2 + cameraRef.current.x) % gridStep + gridStep) % gridStep;
-            const offsetY = ((height / 2 + cameraRef.current.y) % gridStep + gridStep) % gridStep;
+            const offsetX =
+              (((width / 2 + cameraRef.current.x) % gridStep) + gridStep) %
+              gridStep;
+            const offsetY =
+              (((height / 2 + cameraRef.current.y) % gridStep) + gridStep) %
+              gridStep;
             for (let gx = offsetX; gx < width; gx += gridStep) {
               ctx.beginPath();
               ctx.moveTo(gx, 0);
@@ -336,7 +486,6 @@ export const BobModule: React.FC = () => {
           const nodeMap = new Map<string, SimNode>();
           for (const n of nodes) nodeMap.set(n.id, n);
 
-          // 1. Repulsión y Distancia Mínima Anti-Colisión entre Nodos
           for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
               const a = nodes[i];
@@ -357,11 +506,17 @@ export const BobModule: React.FC = () => {
                 const overlap = (minSep - dist) * 0.15;
                 const nx = dx / dist;
                 const ny = dy / dist;
-                if (dragStateRef.current.draggingNodeId !== a.id && a.kind !== "island") {
+                if (
+                  dragStateRef.current.draggingNodeId !== a.id &&
+                  a.kind !== "island"
+                ) {
                   a.vx -= nx * overlap;
                   a.vy -= ny * overlap;
                 }
-                if (dragStateRef.current.draggingNodeId !== b.id && b.kind !== "island") {
+                if (
+                  dragStateRef.current.draggingNodeId !== b.id &&
+                  b.kind !== "island"
+                ) {
                   b.vx += nx * overlap;
                   b.vy += ny * overlap;
                 }
@@ -369,7 +524,6 @@ export const BobModule: React.FC = () => {
             }
           }
 
-          // 2. Anclaje Orbital Suave hacia la constelación de su Isla madre
           for (const n of nodes) {
             if (dragStateRef.current.draggingNodeId === n.id) continue;
             const springK = n.kind === "island" ? 0.08 : 0.025;
@@ -381,13 +535,19 @@ export const BobModule: React.FC = () => {
             n.y += n.vy;
           }
 
-          // Transformación de Cámara
-          ctx.translate(width / 2 + cameraRef.current.x, height / 2 + cameraRef.current.y);
+          ctx.translate(
+            width / 2 + cameraRef.current.x,
+            height / 2 + cameraRef.current.y
+          );
           ctx.scale(cameraRef.current.zoom, cameraRef.current.zoom);
 
           const searchLower = graphSearch.trim().toLowerCase();
           const isNodeVisible = (n: SimNode) => {
-            if (graphIslandFilter !== "ALL" && n.islandId !== graphIslandFilter) return false;
+            if (
+              graphIslandFilter !== "ALL" &&
+              n.islandId !== graphIslandFilter
+            )
+              return false;
             return true;
           };
           const isNodeHighlighted = (n: SimNode) => {
@@ -397,7 +557,6 @@ export const BobModule: React.FC = () => {
             return false;
           };
 
-          // 3. Dibujar Aristas
           for (const e of edges) {
             if (e.kind === "causal" && !edgeFilter.causal) continue;
             if (e.kind === "semantic" && !edgeFilter.semantic) continue;
@@ -405,7 +564,8 @@ export const BobModule: React.FC = () => {
 
             const src = nodeMap.get(e.source);
             const dst = nodeMap.get(e.target);
-            if (!src || !dst || !isNodeVisible(src) || !isNodeVisible(dst)) continue;
+            if (!src || !dst || !isNodeVisible(src) || !isNodeVisible(dst))
+              continue;
 
             const isFocused =
               selectedSimNode?.id === src.id ||
@@ -456,7 +616,6 @@ export const BobModule: React.FC = () => {
             }
           }
 
-          // 4. Dibujar Círculos de Nodos
           for (const n of nodes) {
             if (!isNodeVisible(n)) continue;
             const high = isNodeHighlighted(n);
@@ -506,41 +665,68 @@ export const BobModule: React.FC = () => {
             }
           }
 
-          // 5. Dibujar Etiquetas en Cápsulas con Detector Anti-Solapamiento (nunca se pisan entre sí)
-          const occupiedBoxes: { x1: number; y1: number; x2: number; y2: number }[] = [];
+          const occupiedBoxes: {
+            x1: number;
+            y1: number;
+            x2: number;
+            y2: number;
+          }[] = [];
           const zoom = cameraRef.current.zoom;
 
-          // Orden de prioridad de etiquetas: Seleccionado/Hover -> Islas -> Nodos normales
           const prioritizedNodes = [...nodes].sort((a, b) => {
-            const aFocus = selectedSimNode?.id === a.id || hoveredNodeId === a.id ? 2 : a.kind === "island" ? 1 : 0;
-            const bFocus = selectedSimNode?.id === b.id || hoveredNodeId === b.id ? 2 : b.kind === "island" ? 1 : 0;
+            const aFocus =
+              selectedSimNode?.id === a.id || hoveredNodeId === a.id
+                ? 2
+                : a.kind === "island"
+                ? 1
+                : 0;
+            const bFocus =
+              selectedSimNode?.id === b.id || hoveredNodeId === b.id
+                ? 2
+                : b.kind === "island"
+                ? 1
+                : 0;
             return bFocus - aFocus;
           });
 
           for (const n of prioritizedNodes) {
             if (!isNodeVisible(n)) continue;
-            const isFocus = selectedSimNode?.id === n.id || hoveredNodeId === n.id;
+            const isFocus =
+              selectedSimNode?.id === n.id || hoveredNodeId === n.id;
             const high = isNodeHighlighted(n);
 
-            // Si el zoom es lejano, mostrar siempre las Islas y el nodo enfocado/buscado, y mostrar el resto al acercar
-            if (n.kind === "memory" && !isFocus && !searchLower && zoom < 0.78) {
+            if (
+              n.kind === "memory" &&
+              !isFocus &&
+              !searchLower &&
+              zoom < 0.78
+            ) {
               continue;
             }
 
-            const fontSize = n.kind === "island" ? 11.5 / Math.sqrt(zoom) : 10 / Math.sqrt(zoom);
-            ctx.font = `${n.kind === "island" || isFocus ? "bold " : ""}${fontSize.toFixed(1)}px monospace`;
+            const fontSize =
+              n.kind === "island"
+                ? 11.5 / Math.sqrt(zoom)
+                : 10 / Math.sqrt(zoom);
+            ctx.font = `${
+              n.kind === "island" || isFocus ? "bold " : ""
+            }${fontSize.toFixed(1)}px monospace`;
 
-            const textStr = n.kind === "island" ? n.label : n.label.slice(0, 32);
+            const textStr =
+              n.kind === "island" ? n.label : n.label.slice(0, 32);
             const textMetrics = ctx.measureText(textStr);
             const padX = 5 / Math.sqrt(zoom);
             const padY = 3 / Math.sqrt(zoom);
             const boxW = textMetrics.width + padX * 2;
             const boxH = fontSize + padY * 2;
 
-            const boxX = n.kind === "island" ? n.x - boxW / 2 : n.x + n.radius + 6;
-            const boxY = n.kind === "island" ? n.y - n.radius - boxH - 8 : n.y - boxH / 2;
+            const boxX =
+              n.kind === "island" ? n.x - boxW / 2 : n.x + n.radius + 6;
+            const boxY =
+              n.kind === "island"
+                ? n.y - n.radius - boxH - 8
+                : n.y - boxH / 2;
 
-            // Verificar si esta etiqueta chocaría con otra etiqueta ya dibujada
             const overlaps = occupiedBoxes.some(
               (b) =>
                 boxX < b.x2 + 4 &&
@@ -553,9 +739,13 @@ export const BobModule: React.FC = () => {
               continue;
             }
 
-            occupiedBoxes.push({ x1: boxX, y1: boxY, x2: boxX + boxW, y2: boxY + boxH });
+            occupiedBoxes.push({
+              x1: boxX,
+              y1: boxY,
+              x2: boxX + boxW,
+              y2: boxY + boxH,
+            });
 
-            // Cápsula oscura de alto contraste detrás del texto
             ctx.fillStyle = isFocus
               ? "#f4f4f5"
               : n.kind === "island"
@@ -591,7 +781,14 @@ export const BobModule: React.FC = () => {
 
     animationFrameId = requestAnimationFrame(renderLoop);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [viewLayout, graphSearch, graphIslandFilter, selectedSimNode, hoveredNodeId, edgeFilter]);
+  }, [
+    viewLayout,
+    graphSearch,
+    graphIslandFilter,
+    selectedSimNode,
+    hoveredNodeId,
+    edgeFilter,
+  ]);
 
   const screenToWorld = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -635,7 +832,9 @@ export const BobModule: React.FC = () => {
     const { wx, wy } = screenToWorld(e.clientX, e.clientY);
     const st = dragStateRef.current;
     if (st.draggingNodeId) {
-      const target = simNodesRef.current.find((n) => n.id === st.draggingNodeId);
+      const target = simNodesRef.current.find(
+        (n) => n.id === st.draggingNodeId
+      );
       if (target) {
         target.x = wx;
         target.y = wy;
@@ -654,7 +853,6 @@ export const BobModule: React.FC = () => {
       return;
     }
 
-    // Detectar nodo bajo el cursor para iluminar su cápsula de texto y aristas
     let foundHover: string | null = null;
     for (let i = simNodesRef.current.length - 1; i >= 0; i--) {
       const n = simNodesRef.current[i];
@@ -677,12 +875,17 @@ export const BobModule: React.FC = () => {
 
   const handleCanvasWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     const factor = e.deltaY < 0 ? 1.14 : 0.88;
-    cameraRef.current.zoom = Math.min(3.5, Math.max(0.32, cameraRef.current.zoom * factor));
+    cameraRef.current.zoom = Math.min(
+      3.5,
+      Math.max(0.32, cameraRef.current.zoom * factor)
+    );
   };
 
   const handleWakeBob = async () => {
     setWaking(true);
-    setSyncMessage("Iniciando demonio de BOB y cargando 99 capas en RTX 5060 Ti (~15-25s)...");
+    setSyncMessage(
+      "Iniciando demonio de BOB y cargando 99 capas en RTX 5060 Ti (~15-25s)..."
+    );
     try {
       const msg = await invoke<string>("wake_bob_daemon");
       setSyncMessage(msg);
@@ -694,7 +897,9 @@ export const BobModule: React.FC = () => {
 
   const handleSyncEcosystem = async () => {
     setLoading(true);
-    setSyncMessage("Sincronizando ~/proyectos y axiomas de AXIS en el Hipocampo 4D...");
+    setSyncMessage(
+      "Sincronizando ~/proyectos y axiomas de AXIS en el Hipocampo 4D..."
+    );
     try {
       const raw = await invoke<string>("sync_bob_ecosystem");
       const data = JSON.parse(raw);
@@ -703,7 +908,9 @@ export const BobModule: React.FC = () => {
         setCustomIslands(data.custom_islands);
       }
       setSyncMessage(
-        `Hipocampo sincronizado: ${data.axioms_seeded} axiomas + ${(data.projects_indexed || []).length} repositorios indexados.`
+        `Hipocampo sincronizado: ${data.axioms_seeded} axiomas + ${
+          (data.projects_indexed || []).length
+        } repositorios indexados.`
       );
       fetchGraphSnapshot();
     } catch (e: any) {
@@ -728,14 +935,21 @@ export const BobModule: React.FC = () => {
   };
 
   const sendQueryToBob = async (userMsg: string, targetIsland: string) => {
-    appendMessageToIsland(targetIsland, { role: "user", content: userMsg, mode });
+    const currentSessionId = activeSession.id;
+    appendMessageToSession(currentSessionId, {
+      role: "user",
+      content: userMsg,
+      mode,
+    });
     setLoading(true);
 
     try {
       let axisSnapshot = "";
       try {
         const repos = await invoke<any[]>("repos_get_list");
-        axisSnapshot = `Repositorios locales de Daniel en Axis (${repos?.length || 0} proyectos): ${JSON.stringify(
+        axisSnapshot = `Repositorios locales de Daniel en Axis (${
+          repos?.length || 0
+        } proyectos): ${JSON.stringify(
           repos?.map((r: any) => ({
             proyecto: r.alias || r.name,
             stack: r.tag || r.stack,
@@ -749,7 +963,8 @@ export const BobModule: React.FC = () => {
         axisSnapshot = "Módulo Axis conectado.";
       }
 
-      const payloadMessage = `[ISLAND:${targetIsland}] ${userMsg}`;
+      // Enviamos tanto el ID de la Sesión de Chat como la Isla del Hipocampo
+      const payloadMessage = `[SESSION:${currentSessionId}][ISLAND:${targetIsland}] ${userMsg}`;
       const raw = await invoke<string>("ask_bob_agent", {
         message: payloadMessage,
         mode,
@@ -765,32 +980,41 @@ export const BobModule: React.FC = () => {
       }
 
       const destinationIsland = res.active_custom_island || targetIsland;
-      if (res.active_custom_island && res.active_custom_island !== activeIsland) {
+      if (
+        res.active_custom_island &&
+        res.active_custom_island !== activeIsland
+      ) {
         setActiveIsland(res.active_custom_island);
         setSyncMessage(
           `Isla de Vectores '${res.active_custom_island}' activada en el Hipocampo (100% aislamiento).`
         );
       }
 
-      appendMessageToIsland(destinationIsland, {
-        role: "bob",
-        content: res.answer || "Sin respuesta del Córtex.",
-        thinking: res.thinking,
-        island: res.island,
-        similarity: res.similarity,
-        ingest_ms: res.ingest_ms,
-        thalamus_us: res.thalamus_us,
-        hippocampus_us: res.hippocampus_us,
-        total_ms: res.total_ms,
-        tools_used: res.tools_used,
-        mode,
-      });
+      appendMessageToSession(
+        currentSessionId,
+        {
+          role: "bob",
+          content: res.answer || "Sin respuesta del Córtex.",
+          thinking: res.thinking,
+          island: res.island,
+          similarity: res.similarity,
+          ingest_ms: res.ingest_ms,
+          thalamus_us: res.thalamus_us,
+          hippocampus_us: res.hippocampus_us,
+          total_ms: res.total_ms,
+          tools_used: res.tools_used,
+          mode,
+        },
+        destinationIsland
+      );
 
       fetchGraphSnapshot();
     } catch (e: any) {
-      appendMessageToIsland(targetIsland, {
+      appendMessageToSession(currentSessionId, {
         role: "bob",
-        content: `[!] No se pudo contactar con el demonio de BOB en el puerto 8086: ${String(e)}`,
+        content: `[!] No se pudo contactar con el demonio de BOB en el puerto 8086: ${String(
+          e
+        )}`,
         island: "Offline",
       });
     } finally {
@@ -808,13 +1032,40 @@ export const BobModule: React.FC = () => {
   const currentFilterLabel =
     graphIslandFilter === "ALL"
       ? "Todas las Islas (4D)"
-      : graphData?.islands.find((i) => i.id === graphIslandFilter)?.name || graphIslandFilter;
+      : graphData?.islands.find((i) => i.id === graphIslandFilter)?.name ||
+        graphIslandFilter;
+
+  const filteredSessions = sessions.filter((s) => {
+    const q = chatFilterQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      s.title.toLowerCase().includes(q) || s.island.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="flex-1 w-full flex flex-col h-full bg-zinc-950 text-zinc-100 p-5 gap-3 overflow-hidden select-none">
       {/* Cabecera Monocromática de Alto Contraste */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-900/90 border border-zinc-700/80 rounded-xl p-3.5">
         <div className="flex items-center gap-3">
+          {viewLayout !== "graph" && (
+            <button
+              onClick={() => setShowChatSidebar(!showChatSidebar)}
+              className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white transition cursor-pointer"
+              title={
+                showChatSidebar
+                  ? "Ocultar panel de chats"
+                  : "Mostrar panel de chats"
+              }
+            >
+              {showChatSidebar ? (
+                <PanelLeftClose className="w-4 h-4" />
+              ) : (
+                <PanelLeftOpen className="w-4 h-4" />
+              )}
+            </button>
+          )}
+
           <div
             className={`w-2.5 h-2.5 rounded-full transition-all ${
               online
@@ -830,16 +1081,22 @@ export const BobModule: React.FC = () => {
               BOB ENGINE v2.0 — ORÁCULO CENTRAL & HIPOCAMPO 4D
             </h1>
             <p className="text-[11px] text-zinc-400 font-mono">
-              {online ? modelName : "Demonio en puerto 8086 apagado"} | Vectores Activos:{" "}
-              <span className="text-white font-semibold">{graphData?.total_vectors || 0}</span> | Sinapsis K-NN:{" "}
-              <span className="text-white font-semibold">{graphData?.total_synapses || causalEdges}</span> | Islas:{" "}
-              <span className="text-white font-semibold">{4 + customIslands.length}</span>
+              {online ? modelName : "Demonio en puerto 8086 apagado"} |
+              Vectores:{" "}
+              <span className="text-white font-semibold">
+                {graphData?.total_vectors || 0}
+              </span>{" "}
+              | Sinapsis:{" "}
+              <span className="text-white font-semibold">
+                {graphData?.total_synapses || causalEdges}
+              </span>{" "}
+              | Chats:{" "}
+              <span className="text-white font-semibold">{sessions.length}</span>
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Conmutador de Vista de Alto Contraste */}
           <div className="flex items-center bg-zinc-950 border border-zinc-700 rounded-lg p-0.5 mr-2">
             <button
               onClick={() => setViewLayout("chat")}
@@ -897,13 +1154,15 @@ export const BobModule: React.FC = () => {
             disabled={!online || loading}
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white disabled:opacity-40 text-xs font-semibold border border-zinc-600 transition cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+            />
             Sincronizar ~/proyectos
           </button>
         </div>
       </div>
 
-      {/* Barra de Islas del Hipocampo con Alto Contraste */}
+      {/* Barra de Islas del Hipocampo */}
       <div className="flex flex-col gap-2 bg-zinc-900/70 border border-zinc-700/80 rounded-xl p-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -916,6 +1175,11 @@ export const BobModule: React.FC = () => {
               onClick={() => {
                 setActiveIsland("global");
                 setGraphIslandFilter("ALL");
+                setSessions((prev) =>
+                  prev.map((s) =>
+                    s.id === activeSession.id ? { ...s, island: "global" } : s
+                  )
+                );
               }}
               className={`px-3 py-1 rounded-lg text-xs font-mono border transition cursor-pointer ${
                 activeIsland === "global"
@@ -934,6 +1198,13 @@ export const BobModule: React.FC = () => {
                   onClick={() => {
                     setActiveIsland(isl.slug);
                     setGraphIslandFilter(`custom:${isl.slug}`);
+                    setSessions((prev) =>
+                      prev.map((s) =>
+                        s.id === activeSession.id
+                          ? { ...s, island: isl.slug }
+                          : s
+                      )
+                    );
                   }}
                   title={isl.description}
                   className={`px-3 py-1 rounded-lg text-xs font-mono border transition cursor-pointer flex items-center gap-1.5 ${
@@ -944,7 +1215,11 @@ export const BobModule: React.FC = () => {
                 >
                   <Database className="w-3 h-3" />
                   {isl.name}
-                  <span className={isSelected ? "text-zinc-700 font-bold" : "text-zinc-300"}>
+                  <span
+                    className={
+                      isSelected ? "text-zinc-700 font-bold" : "text-zinc-300"
+                    }
+                  >
                     ({isl.node_count})
                   </span>
                 </button>
@@ -957,7 +1232,7 @@ export const BobModule: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 border border-white text-xs font-mono font-bold transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            Nueva Isla / Conversación
+            Nueva Isla Vectorial
           </button>
         </div>
 
@@ -994,40 +1269,173 @@ export const BobModule: React.FC = () => {
         </div>
       )}
 
-      {/* Contenedor Principal: Consola + Grafo Obsidian */}
-      <div className="flex-1 flex gap-4 overflow-hidden min-h-0">
-        {/* COLUMNA 1: CONSOLA COGNITIVA DE BOB */}
-        {(viewLayout === "chat" || viewLayout === "split") && (
-          <div className={`${viewLayout === "split" ? "w-1/2" : "w-full"} flex flex-col gap-3 h-full overflow-hidden`}>
-            {/* Selector de Modos Cognitivos con Alto Contraste */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {[
-                { id: "normal", label: "Córtex + ReAct PC", icon: Terminal },
-                { id: "deep-think", label: "/deep-think (ABE)", icon: GitBranch },
-                { id: "rem", label: "/rem (Sueño)", icon: Sparkles },
-                { id: "web", label: "/web", icon: Globe },
-                { id: "quiron", label: "/quiron", icon: ShieldAlert },
-              ].map((item) => {
-                const Icon = item.icon;
-                const active = mode === item.id;
+      {/* Cuerpo Principal: [Sidebar de Chats] + [Consola Activa] + [Grafo Obsidian 4D] */}
+      <div className="flex-1 flex gap-3.5 overflow-hidden min-h-0">
+        {/* PANEL LATERAL DE CHATS (ESTILO GEMINI / CLAUDE / GPT) */}
+        {viewLayout !== "graph" && showChatSidebar && (
+          <div className="w-64 shrink-0 flex flex-col bg-zinc-900/75 border border-zinc-700/80 rounded-xl p-3 gap-2.5 h-full overflow-hidden">
+            <button
+              onClick={() => handleCreateNewChat(activeIsland)}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-mono font-bold transition cursor-pointer shadow-sm"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              Nuevo Chat ({activeIsland.toUpperCase()})
+            </button>
+
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-2" />
+              <input
+                type="text"
+                value={chatFilterQuery}
+                onChange={(e) => setChatFilterQuery(e.target.value)}
+                placeholder="Filtrar conversaciones..."
+                className="w-full bg-zinc-950 border border-zinc-700 rounded-lg pl-8 pr-2.5 py-1 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-zinc-400 font-mono"
+              />
+            </div>
+
+            <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-1 pt-1">
+              Historial de Sesiones ({filteredSessions.length})
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+              {filteredSessions.map((sess) => {
+                const isCurrent = sess.id === activeSession.id;
+                const isEditing = editingSessionId === sess.id;
+
                 return (
-                  <button
-                    key={item.id}
-                    onClick={() => setMode(item.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono border transition cursor-pointer ${
-                      active
-                        ? "bg-white text-zinc-950 border-white font-bold"
-                        : "bg-zinc-800 border-zinc-600 text-zinc-100 hover:bg-zinc-700 hover:border-zinc-400"
+                  <div
+                    key={sess.id}
+                    onClick={() => handleSelectChat(sess)}
+                    className={`group flex flex-col gap-1 p-2.5 rounded-lg border transition cursor-pointer ${
+                      isCurrent
+                        ? "bg-zinc-100 text-zinc-950 border-white font-semibold"
+                        : "bg-zinc-950/60 border-zinc-800 text-zinc-200 hover:bg-zinc-800/80 hover:border-zinc-600"
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    {item.label}
-                  </button>
+                    <div className="flex items-center justify-between gap-1.5">
+                      {isEditing ? (
+                        <div
+                          className="flex items-center gap-1 flex-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="text"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && handleConfirmRename(sess.id)
+                            }
+                            autoFocus
+                            className="w-full bg-zinc-900 text-white border border-zinc-500 rounded px-1.5 py-0.5 text-xs font-sans focus:outline-none"
+                          />
+                          <button
+                            onClick={(e) => handleConfirmRename(sess.id, e)}
+                            className="p-1 rounded bg-white text-zinc-950"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs truncate flex-1 font-sans">
+                          {sess.title}
+                        </span>
+                      )}
+
+                      {!isEditing && (
+                        <div className="flex items-center gap-1 opacity-75 group-hover:opacity-100">
+                          <button
+                            onClick={(e) => handleStartRename(sess, e)}
+                            className={`p-1 rounded hover:bg-zinc-700/50 ${
+                              isCurrent
+                                ? "text-zinc-800 hover:text-black"
+                                : "text-zinc-400 hover:text-white"
+                            }`}
+                            title="Renombrar chat"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteChat(sess.id, e)}
+                            className={`p-1 rounded hover:bg-zinc-700/50 ${
+                              isCurrent
+                                ? "text-zinc-800 hover:text-black"
+                                : "text-zinc-400 hover:text-white"
+                            }`}
+                            title="Eliminar chat"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] font-mono">
+                      <span
+                        className={`px-1.5 py-0.2 rounded border ${
+                          isCurrent
+                            ? "bg-zinc-950 text-white border-zinc-800"
+                            : "bg-zinc-900 text-zinc-300 border-zinc-700"
+                        }`}
+                      >
+                        {sess.island.toUpperCase()}
+                      </span>
+                      <span
+                        className={
+                          isCurrent ? "text-zinc-700" : "text-zinc-400"
+                        }
+                      >
+                        {sess.messages.length} msgs
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
+          </div>
+        )}
 
-            {/* Mensajes de la Conversación */}
+        {/* COLUMNA CENTRAL: CONSOLA COGNITIVA DEL CHAT ACTIVO */}
+        {(viewLayout === "chat" || viewLayout === "split") && (
+          <div className="flex-1 flex flex-col gap-3 h-full overflow-hidden min-w-0">
+            {/* Barra de Modos Cognitivos + Título del Chat Activo */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { id: "normal", label: "Córtex + ReAct PC", icon: Terminal },
+                  {
+                    id: "deep-think",
+                    label: "/deep-think (ABE)",
+                    icon: GitBranch,
+                  },
+                  { id: "rem", label: "/rem (Sueño)", icon: Sparkles },
+                  { id: "web", label: "/web", icon: Globe },
+                  { id: "quiron", label: "/quiron", icon: ShieldAlert },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const active = mode === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setMode(item.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono border transition cursor-pointer ${
+                        active
+                          ? "bg-white text-zinc-950 border-white font-bold"
+                          : "bg-zinc-800 border-zinc-600 text-zinc-100 hover:bg-zinc-700 hover:border-zinc-400"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <span className="text-xs font-mono text-zinc-300 bg-zinc-900 border border-zinc-700 px-2.5 py-1 rounded-lg truncate max-w-xs">
+                Chat: <strong className="text-white">{activeSession?.title}</strong>
+              </span>
+            </div>
+
+            {/* Mensajes del Chat Activo */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 select-text">
               {currentMessages.map((m, idx) => (
                 <div
@@ -1041,7 +1449,9 @@ export const BobModule: React.FC = () => {
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs text-zinc-400">
                     <span className="font-bold text-white tracking-wide">
                       {m.role === "user"
-                        ? `DANIEL [${activeIsland.toUpperCase()} | ${m.mode || "normal"}]`
+                        ? `DANIEL [${activeIsland.toUpperCase()} | ${
+                            m.mode || "normal"
+                          }]`
                         : "BOB (ORÁCULO LOCAL)"}
                     </span>
 
@@ -1049,11 +1459,19 @@ export const BobModule: React.FC = () => {
                       <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] text-zinc-300">
                         <span className="px-2 py-0.5 rounded bg-zinc-800 text-white border border-zinc-600 font-semibold">
                           {m.island}
-                          {m.similarity !== undefined ? ` (${m.similarity.toFixed(2)})` : ""}
+                          {m.similarity !== undefined
+                            ? ` (${m.similarity.toFixed(2)})`
+                            : ""}
                         </span>
-                        {m.thalamus_us !== undefined && <span>Tálamo: {m.thalamus_us.toFixed(1)}µs</span>}
-                        {m.hippocampus_us !== undefined && <span>HNSW: {m.hippocampus_us.toFixed(1)}µs</span>}
-                        {m.total_ms !== undefined && <span>{(m.total_ms / 1000).toFixed(1)}s</span>}
+                        {m.thalamus_us !== undefined && (
+                          <span>Tálamo: {m.thalamus_us.toFixed(1)}µs</span>
+                        )}
+                        {m.hippocampus_us !== undefined && (
+                          <span>HNSW: {m.hippocampus_us.toFixed(1)}µs</span>
+                        )}
+                        {m.total_ms !== undefined && (
+                          <span>{(m.total_ms / 1000).toFixed(1)}s</span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1074,10 +1492,16 @@ export const BobModule: React.FC = () => {
                   {m.thinking && (
                     <div className="mb-2">
                       <button
-                        onClick={() => setOpenThinkIdx(openThinkIdx === idx ? null : idx)}
+                        onClick={() =>
+                          setOpenThinkIdx(openThinkIdx === idx ? null : idx)
+                        }
                         className="flex items-center gap-1 text-[11px] text-zinc-300 hover:text-white font-mono cursor-pointer"
                       >
-                        {openThinkIdx === idx ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        {openThinkIdx === idx ? (
+                          <ChevronUp className="w-3 h-3" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3" />
+                        )}
                         Inspeccionar Buffer &lt;think&gt;
                       </button>
                       {openThinkIdx === idx && (
@@ -1104,8 +1528,8 @@ export const BobModule: React.FC = () => {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder={
                   activeIsland !== "global"
-                    ? `Escribiendo en Isla Aislada [${activeIsland.toUpperCase()}]...`
-                    : "Escribe una orden a BOB o crea una nueva isla..."
+                    ? `Mensaje en "${activeSession?.title}" [Isla: ${activeIsland.toUpperCase()}]...`
+                    : `Mensaje en "${activeSession?.title}" [Hipocampo Global]...`
                 }
                 className="flex-1 bg-transparent px-2.5 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none"
               />
@@ -1121,14 +1545,13 @@ export const BobModule: React.FC = () => {
           </div>
         )}
 
-        {/* COLUMNA 2: VISOR TOPOLÓGICO DEL CEREBRO DE BOB (ESTILO OBSIDIAN) */}
+        {/* COLUMNA DERECHA: VISOR TOPOLÓGICO DEL CEREBRO DE BOB (ESTILO OBSIDIAN) */}
         {(viewLayout === "split" || viewLayout === "graph") && (
           <div
             className={`${
-              viewLayout === "split" ? "w-1/2" : "w-full"
+              viewLayout === "split" ? "w-[44%] shrink-0" : "w-full"
             } flex flex-col bg-zinc-950 border border-zinc-700/90 rounded-xl overflow-hidden relative h-full`}
           >
-            {/* Barra Superior de Controles del Grafo (Selector Personalizado 100% Monocromático de Alto Contraste) */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-zinc-900/95 border-b border-zinc-700/90 z-30">
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -1138,18 +1561,17 @@ export const BobModule: React.FC = () => {
                     value={graphSearch}
                     onChange={(e) => setGraphSearch(e.target.value)}
                     placeholder="Buscar vector o concepto..."
-                    className="bg-zinc-950 border border-zinc-600 rounded-lg pl-8 pr-3 py-1 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-white w-52 font-mono"
+                    className="bg-zinc-950 border border-zinc-600 rounded-lg pl-8 pr-3 py-1 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-white w-44 font-mono"
                   />
                 </div>
 
-                {/* Dropdown Personalizado Monocromático (Evita el fondo blanco nativo de GTK) */}
                 <div className="relative">
                   <button
                     onClick={() => setShowIslandDropdown(!showIslandDropdown)}
-                    className="flex items-center justify-between gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-500 text-white rounded-lg px-3 py-1 text-xs font-mono font-semibold cursor-pointer min-w-48"
+                    className="flex items-center justify-between gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-500 text-white rounded-lg px-3 py-1 text-xs font-mono font-semibold cursor-pointer min-w-44"
                   >
-                    <span>{currentFilterLabel}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-zinc-200" />
+                    <span className="truncate">{currentFilterLabel}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-zinc-200 shrink-0" />
                   </button>
 
                   {showIslandDropdown && (
@@ -1166,7 +1588,9 @@ export const BobModule: React.FC = () => {
                         }`}
                       >
                         <span>Todas las Islas (4D)</span>
-                        <span className="text-[10px] opacity-80">{graphData?.total_vectors || 0} nodos</span>
+                        <span className="text-[10px] opacity-80">
+                          {graphData?.total_vectors || 0} nodos
+                        </span>
                       </button>
 
                       {graphData?.islands.map((isl) => (
@@ -1183,7 +1607,9 @@ export const BobModule: React.FC = () => {
                           }`}
                         >
                           <span>{isl.name}</span>
-                          <span className="text-[10px] opacity-80">{isl.node_count}</span>
+                          <span className="text-[10px] opacity-80">
+                            {isl.node_count}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -1193,28 +1619,35 @@ export const BobModule: React.FC = () => {
 
               <div className="flex items-center gap-1.5 font-mono text-[11px]">
                 <button
-                  onClick={() => setEdgeFilter((p) => ({ ...p, causal: !p.causal }))}
-                  className={`px-2.5 py-1 rounded-md border cursor-pointer transition ${
+                  onClick={() =>
+                    setEdgeFilter((p) => ({ ...p, causal: !p.causal }))
+                  }
+                  className={`px-2 py-1 rounded-md border cursor-pointer transition ${
                     edgeFilter.causal
                       ? "bg-white text-zinc-950 border-white font-bold"
                       : "bg-zinc-800 text-zinc-200 border-zinc-600 hover:border-zinc-400"
                   }`}
                 >
-                  Causal O(E)
+                  Causal
                 </button>
                 <button
-                  onClick={() => setEdgeFilter((p) => ({ ...p, semantic: !p.semantic }))}
-                  className={`px-2.5 py-1 rounded-md border cursor-pointer transition ${
+                  onClick={() =>
+                    setEdgeFilter((p) => ({ ...p, semantic: !p.semantic }))
+                  }
+                  className={`px-2 py-1 rounded-md border cursor-pointer transition ${
                     edgeFilter.semantic
                       ? "bg-white text-zinc-950 border-white font-bold"
                       : "bg-zinc-800 text-zinc-200 border-zinc-600 hover:border-zinc-400"
                   }`}
                 >
-                  Similitud K-NN
+                  K-NN
                 </button>
                 <button
                   onClick={() => {
-                    cameraRef.current.zoom = Math.min(3.5, cameraRef.current.zoom * 1.22);
+                    cameraRef.current.zoom = Math.min(
+                      3.5,
+                      cameraRef.current.zoom * 1.22
+                    );
                   }}
                   className="p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white cursor-pointer"
                   title="Acercar"
@@ -1223,7 +1656,10 @@ export const BobModule: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    cameraRef.current.zoom = Math.max(0.32, cameraRef.current.zoom * 0.8);
+                    cameraRef.current.zoom = Math.max(
+                      0.32,
+                      cameraRef.current.zoom * 0.8
+                    );
                   }}
                   className="p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-white cursor-pointer"
                   title="Alejar"
@@ -1242,7 +1678,6 @@ export const BobModule: React.FC = () => {
               </div>
             </div>
 
-            {/* Lienzo Físico Interactivo */}
             <div className="flex-1 relative overflow-hidden">
               <canvas
                 ref={canvasRef}
@@ -1254,15 +1689,14 @@ export const BobModule: React.FC = () => {
                 className="w-full h-full cursor-grab active:cursor-grabbing block"
               />
 
-              {/* Leyenda Monocromática de Alto Contraste */}
               <div className="absolute bottom-3 left-3 bg-zinc-900/95 border border-zinc-600 rounded-lg px-3 py-2 text-[10px] font-mono text-zinc-200 flex flex-wrap items-center gap-3 pointer-events-none">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-white border border-white inline-block" />
-                  Isla Personalizada / Axioma (λ=0)
+                  Isla / Axioma (λ=0)
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-zinc-400 inline-block" />
-                  Vector 768-dim (Pasa el cursor o haz Zoom)
+                  Vector 768-dim
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-4 h-0.5 bg-white inline-block" />
@@ -1270,13 +1704,14 @@ export const BobModule: React.FC = () => {
                 </span>
               </div>
 
-              {/* Inspector Lateral de Tensores */}
               {selectedSimNode && (
                 <div className="absolute top-3 right-3 bottom-3 w-80 bg-zinc-900/95 border border-zinc-600 rounded-xl p-4 flex flex-col gap-3 shadow-2xl overflow-y-auto select-text z-20">
                   <div className="flex items-start justify-between gap-2 border-b border-zinc-700 pb-2">
                     <div>
                       <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-800 text-white border border-zinc-600 font-semibold">
-                        {selectedSimNode.kind === "island" ? "Núcleo de Isla Cortical" : `Isla: ${selectedSimNode.islandId}`}
+                        {selectedSimNode.kind === "island"
+                          ? "Núcleo de Isla Cortical"
+                          : `Isla: ${selectedSimNode.islandId}`}
                       </span>
                       <h3 className="text-xs font-bold text-white font-mono mt-1.5 break-words">
                         {selectedSimNode.label}
@@ -1290,50 +1725,74 @@ export const BobModule: React.FC = () => {
                     </button>
                   </div>
 
-                  {selectedSimNode.kind === "island" && selectedSimNode.islandRaw && (
-                    <div className="space-y-2.5 text-xs font-mono">
-                      <p className="text-zinc-200 font-sans leading-relaxed">
-                        {selectedSimNode.islandRaw.description}
-                      </p>
-                      <div className="bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-zinc-400">Nodos Confinados:</span>
-                          <span className="text-white font-bold">{selectedSimNode.islandRaw.node_count}</span>
+                  {selectedSimNode.kind === "island" &&
+                    selectedSimNode.islandRaw && (
+                      <div className="space-y-2.5 text-xs font-mono">
+                        <p className="text-zinc-200 font-sans leading-relaxed">
+                          {selectedSimNode.islandRaw.description}
+                        </p>
+                        <div className="bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-zinc-400">
+                              Nodos Confinados:
+                            </span>
+                            <span className="text-white font-bold">
+                              {selectedSimNode.islandRaw.node_count}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-zinc-400">Aislamiento:</span>
+                            <span className="text-zinc-100">
+                              {selectedSimNode.islandRaw.is_custom
+                                ? "100% Dominio Cerrado"
+                                : "HNSW + Plano 2"}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-zinc-400">Aislamiento:</span>
-                          <span className="text-zinc-100">
-                            {selectedSimNode.islandRaw.is_custom ? "100% Dominio Cerrado" : "HNSW + Plano 2"}
-                          </span>
-                        </div>
+                        <button
+                          onClick={() => {
+                            const slug =
+                              selectedSimNode.islandRaw!.id.replace(
+                                "custom:",
+                                ""
+                              );
+                            if (selectedSimNode.islandRaw!.is_custom) {
+                              handleCreateNewChat(slug);
+                              setActiveIsland(slug);
+                            }
+                            setGraphIslandFilter(selectedSimNode.islandRaw!.id);
+                          }}
+                          className="w-full py-1.5 rounded-lg bg-white text-zinc-950 font-bold text-xs hover:bg-zinc-200 transition cursor-pointer"
+                        >
+                          Abrir Nuevo Chat en esta Isla
+                        </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          setGraphIslandFilter(selectedSimNode.islandRaw!.id);
-                        }}
-                        className="w-full py-1.5 rounded-lg bg-white text-zinc-950 font-bold text-xs hover:bg-zinc-200 transition cursor-pointer"
-                      >
-                        Aislar esta Isla en el Mapa
-                      </button>
-                    </div>
-                  )}
+                    )}
 
                   {selectedSimNode.kind === "memory" && selectedSimNode.raw && (
                     <div className="space-y-3 text-xs">
                       <div className="grid grid-cols-2 gap-2 font-mono text-[11px] bg-zinc-950 border border-zinc-700 rounded-lg p-2.5">
                         <div>
                           <div className="text-zinc-400">Nodo ID</div>
-                          <div className="text-white font-bold">#{selectedSimNode.raw.raw_id}</div>
+                          <div className="text-white font-bold">
+                            #{selectedSimNode.raw.raw_id}
+                          </div>
                         </div>
                         <div>
                           <div className="text-zinc-400">Validaciones LTP</div>
-                          <div className="text-white font-bold">{selectedSimNode.raw.validations}</div>
+                          <div className="text-white font-bold">
+                            {selectedSimNode.raw.validations}
+                          </div>
                         </div>
                         <div className="col-span-2">
-                          <div className="text-zinc-400">Tasa de Decaimiento (λ)</div>
+                          <div className="text-zinc-400">
+                            Tasa de Decaimiento (λ)
+                          </div>
                           <div className="text-white font-bold">
                             {selectedSimNode.raw.lambda.toFixed(6)}{" "}
-                            {selectedSimNode.raw.lambda === 0 ? "(Axioma Inmortal)" : ""}
+                            {selectedSimNode.raw.lambda === 0
+                              ? "(Axioma Inmortal)"
+                              : ""}
                           </div>
                         </div>
                       </div>
@@ -1343,17 +1802,24 @@ export const BobModule: React.FC = () => {
                           Huella Tensorial 768-dim (L2 Aligned 64B):
                         </div>
                         <div className="flex items-end gap-[2px] h-10 bg-zinc-950 border border-zinc-700 rounded-lg p-1.5 overflow-hidden">
-                          {selectedSimNode.raw.vector_preview.map((val, idx) => {
-                            const mag = Math.min(100, Math.max(12, Math.abs(val) * 950));
-                            return (
-                              <div
-                                key={idx}
-                                style={{ height: `${mag}%` }}
-                                className={`flex-1 rounded-xs ${val >= 0 ? "bg-white" : "bg-zinc-500"}`}
-                                title={`dim[${idx}] = ${val.toFixed(5)}`}
-                              />
-                            );
-                          })}
+                          {selectedSimNode.raw.vector_preview.map(
+                            (val, idx) => {
+                              const mag = Math.min(
+                                100,
+                                Math.max(12, Math.abs(val) * 950)
+                              );
+                              return (
+                                <div
+                                  key={idx}
+                                  style={{ height: `${mag}%` }}
+                                  className={`flex-1 rounded-xs ${
+                                    val >= 0 ? "bg-white" : "bg-zinc-500"
+                                  }`}
+                                  title={`dim[${idx}] = ${val.toFixed(5)}`}
+                                />
+                              );
+                            }
+                          )}
                         </div>
                       </div>
 
@@ -1374,7 +1840,7 @@ export const BobModule: React.FC = () => {
                         }}
                         className="w-full py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-mono font-bold text-[11px] transition cursor-pointer"
                       >
-                        Inyectar Nodo en Barra de Consulta
+                        Inyectar Nodo en el Chat Activo
                       </button>
                     </div>
                   )}
