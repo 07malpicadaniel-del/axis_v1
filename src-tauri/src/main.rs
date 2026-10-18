@@ -10,6 +10,10 @@ fn main() {
         .manage(LibraryState::default())
         .manage(ReposState::default())
         .invoke_handler(tauri::generate_handler![
+            axis_core::commands::get_bob_status,
+            axis_core::commands::wake_bob_daemon,
+            axis_core::commands::sync_bob_ecosystem,
+            axis_core::commands::ask_bob_agent,
             axis_core::commands::check_core_status,
             // Lifestyle: Tasks
             axis_module_lifestyle::commands::lifestyle_get_tasks,

@@ -1,12 +1,262 @@
 [
   {
-    "id": "1eaeeb4f-263f-4db0-9bdf-f87286e63415",
-    "name": "axis_v1",
-    "path": "/home/daniel/axis_v1/src-tauri",
-    "current_branch": "detached",
+    "id": "repo-1",
+    "name": "Axis",
+    "path": "/home/daniel/Axis",
+    "current_branch": "main",
     "is_clean": true,
+    "last_commit": "feat: Sprint 4 completado - Omnibar híbrida, motor de búsqueda full-text en Rust y Outline dinámico",
+    "last_commit_time": "5 months ago",
+    "tag": "Rust / Tauri"
+  },
+  {
+    "id": "repo-2",
+    "name": "FERXARP",
+    "path": "/home/daniel/FERXARP",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "fix(backend): eliminar referencia huerfana a groq en api::mod y estabilizar compilacion",
+    "last_commit_time": "3 weeks ago",
+    "tag": "Systems"
+  },
+  {
+    "id": "repo-3",
+    "name": "Sertra_Workspace",
+    "path": "/home/daniel/Sertra_Workspace",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "feat: MVP funcional completado e inicio del Tiling WM (Sprint 6)",
+    "last_commit_time": "5 months ago",
+    "tag": "React"
+  },
+  {
+    "id": "repo-4",
+    "name": "analisis_exploratorio",
+    "path": "/home/daniel/analisis_exploratorio",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "Actualiza requirements.txt con versiones fijas",
+    "last_commit_time": "5 months ago",
+    "tag": "Python"
+  },
+  {
+    "id": "repo-5",
+    "name": "axis_v1",
+    "path": "/home/daniel/proyectos/axis_v1",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "bob module",
+    "last_commit_time": "9 hours ago",
+    "tag": "Rust / Tauri"
+  },
+  {
+    "id": "repo-6",
+    "name": "bob_engine",
+    "path": "/home/daniel/proyectos/bob_engine",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "feat(alfa-v2.0): agente autonomo completo con arbol binario ABE, muestreo REM dinamico, herramientas PC y busqueda web",
+    "last_commit_time": "9 hours ago",
+    "tag": "Rust"
+  },
+  {
+    "id": "repo-7",
+    "name": "bob_vector_db",
+    "path": "/home/daniel/bob_vector_db",
+    "current_branch": "detached",
+    "is_clean": false,
     "last_commit": "No commits found",
     "last_commit_time": "Unknown",
-    "tag": "Rust / React"
+    "tag": "Rust"
+  },
+  {
+    "id": "repo-8",
+    "name": "dotfiles",
+    "path": "/home/daniel/dotfiles",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "Commit inicial: Entorno maestro Hyprland",
+    "last_commit_time": "5 months ago",
+    "tag": "Systems"
+  },
+  {
+    "id": "repo-9",
+    "name": "historia-fotografia",
+    "path": "/home/daniel/historia-fotografia",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "Primer commit: Estructura base de la presentacion",
+    "last_commit_time": "8 weeks ago",
+    "tag": "React"
+  },
+  {
+    "id": "repo-10",
+    "name": "huadsi",
+    "path": "/home/daniel/huadsi",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "Commit inicial: Configuración base de Huadsi",
+    "last_commit_time": "4 months ago",
+    "tag": "Systems"
+  },
+  {
+    "id": "repo-11",
+    "name": "juegotest",
+    "path": "/home/daniel/AndroidStudioProjects/juegotest",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "actualizacion de lore",
+    "last_commit_time": "5 weeks ago",
+    "tag": "Kotlin"
+  },
+  {
+    "id": "repo-12",
+    "name": "kernel",
+    "path": "/home/daniel/mini_zuvey/kernel",
+    "current_branch": "detached",
+    "is_clean": false,
+    "last_commit": "No commits found",
+    "last_commit_time": "Unknown",
+    "tag": "Rust"
+  },
+  {
+    "id": "repo-13",
+    "name": "machine_learningcd",
+    "path": "/home/daniel/machine_learningcd",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "Actividad final de Machine Learning completada: modelos validados",
+    "last_commit_time": "4 months ago",
+    "tag": "Python"
+  },
+  {
+    "id": "repo-14",
+    "name": "michelangelo",
+    "path": "/home/daniel/michelangelo",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "feat(michelangelo): monorepo setup, tauri-rust pipeline & comfyui-qwen node",
+    "last_commit_time": "3 weeks ago",
+    "tag": "Systems"
+  },
+  {
+    "id": "repo-15",
+    "name": "molex_v1",
+    "path": "/home/daniel/AndroidStudioProjects/molex_v1",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "feat: streaming H.264 NVENC con decodificación nativa MediaCodec y latencia ultra-baja",
+    "last_commit_time": "2 weeks ago",
+    "tag": "Kotlin"
+  },
+  {
+    "id": "repo-16",
+    "name": "numpy",
+    "path": "/home/daniel/numpy",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "Actividad 2 completada: celdas de notebooks ejecutadas",
+    "last_commit_time": "4 months ago",
+    "tag": "Systems"
+  },
+  {
+    "id": "repo-17",
+    "name": "pandas_primeros_pasos",
+    "path": "/home/daniel/pandas_primeros_pasos",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "Actividad de Pandas completada: celdas de notebook ejecutadas",
+    "last_commit_time": "4 months ago",
+    "tag": "Python"
+  },
+  {
+    "id": "repo-18",
+    "name": "presentacion_apps_android",
+    "path": "/home/daniel/presentacion_apps_android",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "feat: implementar cinematica de historia completa, fix de navegacion molex y actualizacion a qwen 2.5",
+    "last_commit_time": "2 weeks ago",
+    "tag": "React"
+  },
+  {
+    "id": "repo-19",
+    "name": "presentacion_ing_sf",
+    "path": "/home/daniel/presentacion_ing_sf",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "feat: presentacion interactiva inicial con arbol de 7 hojas y soporte dual negocio/ti",
+    "last_commit_time": "3 weeks ago",
+    "tag": "React"
+  },
+  {
+    "id": "repo-20",
+    "name": "sebs_project",
+    "path": "/home/daniel/sebs_project",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "feat: Arquitectura base de Seb, interfaz TUI, Bóveda Vectorial y puente Llama.cpp (API pendiente de parche)",
+    "last_commit_time": "5 months ago",
+    "tag": "Rust"
+  },
+  {
+    "id": "repo-21",
+    "name": "sentinel_agent",
+    "path": "/home/daniel/Proyectos/usb-pentest-lab/sentinel_agent",
+    "current_branch": "detached",
+    "is_clean": false,
+    "last_commit": "No commits found",
+    "last_commit_time": "Unknown",
+    "tag": "Rust"
+  },
+  {
+    "id": "repo-22",
+    "name": "space_invaders",
+    "path": "/home/daniel/space_invaders",
+    "current_branch": "detached",
+    "is_clean": false,
+    "last_commit": "No commits found",
+    "last_commit_time": "Unknown",
+    "tag": "Rust"
+  },
+  {
+    "id": "repo-23",
+    "name": "taskapp",
+    "path": "/home/daniel/AndroidStudioProjects/taskapp",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "feat: actualiza lógica y pantallas de la app de tareas",
+    "last_commit_time": "3 weeks ago",
+    "tag": "Kotlin"
+  },
+  {
+    "id": "repo-24",
+    "name": "tracto-disel-app",
+    "path": "/home/daniel/tracto-disel-app",
+    "current_branch": "main",
+    "is_clean": false,
+    "last_commit": "Fix: Sincronización de props y bypass de auth",
+    "last_commit_time": "5 months ago",
+    "tag": "React"
+  },
+  {
+    "id": "repo-25",
+    "name": "tracto-disel-v2",
+    "path": "/home/daniel/tracto-disel-v2",
+    "current_branch": "main",
+    "is_clean": true,
+    "last_commit": "feat: versión final lista para despliegue en Vercel, limpieza de config",
+    "last_commit_time": "5 months ago",
+    "tag": "React"
+  },
+  {
+    "id": "repo-26",
+    "name": "vector_engine",
+    "path": "/home/daniel/vector_engine",
+    "current_branch": "detached",
+    "is_clean": false,
+    "last_commit": "No commits found",
+    "last_commit_time": "Unknown",
+    "tag": "Rust"
   }
 ]

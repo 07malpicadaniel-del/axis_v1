@@ -1,0 +1,210 @@
+[
+  {
+    "id": "repo-1",
+    "path": "/home/daniel/presentacion_ing_sf",
+    "alias": "presentacion_ing_sf",
+    "tag": "React",
+    "name": "presentacion_ing_sf",
+    "stack": "React"
+  },
+  {
+    "id": "repo-2",
+    "path": "/home/daniel/space_invaders",
+    "alias": "space_invaders",
+    "tag": "Rust",
+    "name": "space_invaders",
+    "stack": "Rust"
+  },
+  {
+    "id": "repo-3",
+    "path": "/home/daniel/AndroidStudioProjects/juegotest",
+    "alias": "juegotest",
+    "tag": "Kotlin",
+    "name": "juegotest",
+    "stack": "Kotlin"
+  },
+  {
+    "id": "repo-4",
+    "path": "/home/daniel/AndroidStudioProjects/taskapp",
+    "alias": "taskapp",
+    "tag": "Kotlin",
+    "name": "taskapp",
+    "stack": "Kotlin"
+  },
+  {
+    "id": "repo-5",
+    "path": "/home/daniel/AndroidStudioProjects/molex_v1",
+    "alias": "molex_v1",
+    "tag": "Kotlin",
+    "name": "molex_v1",
+    "stack": "Kotlin"
+  },
+  {
+    "id": "repo-6",
+    "path": "/home/daniel/Sertra_Workspace",
+    "alias": "Sertra_Workspace",
+    "tag": "React",
+    "name": "Sertra_Workspace",
+    "stack": "React"
+  },
+  {
+    "id": "repo-7",
+    "path": "/home/daniel/sebs_project",
+    "alias": "sebs_project",
+    "tag": "Rust",
+    "name": "sebs_project",
+    "stack": "Rust"
+  },
+  {
+    "id": "repo-8",
+    "path": "/home/daniel/presentacion_apps_android",
+    "alias": "presentacion_apps_android",
+    "tag": "React",
+    "name": "presentacion_apps_android",
+    "stack": "React"
+  },
+  {
+    "id": "repo-9",
+    "path": "/home/daniel/tracto-disel-app",
+    "alias": "tracto-disel-app",
+    "tag": "React",
+    "name": "tracto-disel-app",
+    "stack": "React"
+  },
+  {
+    "id": "repo-10",
+    "path": "/home/daniel/mini_zuvey/kernel",
+    "alias": "kernel",
+    "tag": "Rust",
+    "name": "kernel",
+    "stack": "Rust"
+  },
+  {
+    "id": "repo-11",
+    "path": "/home/daniel/FERXARP",
+    "alias": "FERXARP",
+    "tag": "Systems",
+    "name": "FERXARP",
+    "stack": "Systems"
+  },
+  {
+    "id": "repo-12",
+    "path": "/home/daniel/proyectos/bob_engine",
+    "alias": "bob_engine",
+    "tag": "Rust",
+    "name": "bob_engine",
+    "stack": "Rust"
+  },
+  {
+    "id": "repo-13",
+    "path": "/home/daniel/proyectos/axis_v1",
+    "alias": "axis_v1",
+    "tag": "Rust / Tauri",
+    "name": "axis_v1",
+    "stack": "Rust / Tauri"
+  },
+  {
+    "id": "repo-14",
+    "path": "/home/daniel/vector_engine",
+    "alias": "vector_engine",
+    "tag": "Rust",
+    "name": "vector_engine",
+    "stack": "Rust"
+  },
+  {
+    "id": "repo-15",
+    "path": "/home/daniel/historia-fotografia",
+    "alias": "historia-fotografia",
+    "tag": "React",
+    "name": "historia-fotografia",
+    "stack": "React"
+  },
+  {
+    "id": "repo-16",
+    "path": "/home/daniel/analisis_exploratorio",
+    "alias": "analisis_exploratorio",
+    "tag": "Python",
+    "name": "analisis_exploratorio",
+    "stack": "Python"
+  },
+  {
+    "id": "repo-17",
+    "path": "/home/daniel/Axis",
+    "alias": "Axis",
+    "tag": "Rust / Tauri",
+    "name": "Axis",
+    "stack": "Rust / Tauri"
+  },
+  {
+    "id": "repo-18",
+    "path": "/home/daniel/pandas_primeros_pasos",
+    "alias": "pandas_primeros_pasos",
+    "tag": "Python",
+    "name": "pandas_primeros_pasos",
+    "stack": "Python"
+  },
+  {
+    "id": "repo-19",
+    "path": "/home/daniel/huadsi",
+    "alias": "huadsi",
+    "tag": "Systems",
+    "name": "huadsi",
+    "stack": "Systems"
+  },
+  {
+    "id": "repo-20",
+    "path": "/home/daniel/dotfiles",
+    "alias": "dotfiles",
+    "tag": "Systems",
+    "name": "dotfiles",
+    "stack": "Systems"
+  },
+  {
+    "id": "repo-21",
+    "path": "/home/daniel/tracto-disel-v2",
+    "alias": "tracto-disel-v2",
+    "tag": "React",
+    "name": "tracto-disel-v2",
+    "stack": "React"
+  },
+  {
+    "id": "repo-22",
+    "path": "/home/daniel/numpy",
+    "alias": "numpy",
+    "tag": "Systems",
+    "name": "numpy",
+    "stack": "Systems"
+  },
+  {
+    "id": "repo-23",
+    "path": "/home/daniel/machine_learningcd",
+    "alias": "machine_learningcd",
+    "tag": "Python",
+    "name": "machine_learningcd",
+    "stack": "Python"
+  },
+  {
+    "id": "repo-24",
+    "path": "/home/daniel/Proyectos/usb-pentest-lab/sentinel_agent",
+    "alias": "sentinel_agent",
+    "tag": "Rust",
+    "name": "sentinel_agent",
+    "stack": "Rust"
+  },
+  {
+    "id": "repo-25",
+    "path": "/home/daniel/michelangelo",
+    "alias": "michelangelo",
+    "tag": "Systems",
+    "name": "michelangelo",
+    "stack": "Systems"
+  },
+  {
+    "id": "repo-26",
+    "path": "/home/daniel/bob_vector_db",
+    "alias": "bob_vector_db",
+    "tag": "Rust",
+    "name": "bob_vector_db",
+    "stack": "Rust"
+  }
+]
