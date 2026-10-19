@@ -28,6 +28,16 @@ import {
   Trash2,
   Edit3,
   Check,
+  Mic,
+  Square,
+  ExternalLink,
+  Zap,
+  Volume2,
+  VolumeX,
+  Paperclip,
+  FolderGit2,
+  FileCode,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface CustomIslandSummary {
@@ -90,6 +100,14 @@ interface SimNode {
   islandRaw?: GraphIslandDto;
 }
 
+interface AttachedItem {
+  filename: string;
+  savedPath: string;
+  isImage: boolean;
+  previewDataUrl?: string;
+  summary: string;
+}
+
 interface BobChatMessage {
   role: "user" | "bob";
   content: string;
@@ -102,12 +120,15 @@ interface BobChatMessage {
   total_ms?: number;
   tools_used?: string[];
   mode?: string;
+  attachments?: { filename: string; isImage: boolean; previewDataUrl?: string }[];
 }
 
 interface ChatSession {
   id: string;
   title: string;
   island: string;
+  workspacePath?: string;
+  workspaceFiles?: string[];
   createdAt: number;
   updatedAt: number;
   messages: BobChatMessage[];
@@ -115,23 +136,45 @@ interface ChatSession {
 
 const STORAGE_KEY = "axis_bob_chat_sessions_v2";
 
-const createDefaultSession = (island: string = "global"): ChatSession => ({
-  id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-  title: "Nueva conversación",
-  island,
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-  messages: [
-    {
-      role: "bob",
-      content:
-        island === "global"
-          ? "Oráculo BOB v2.0 acoplado a AXIS. Estás en un hilo de conversación limpio conectado al Hipocampo 4D Global. Selecciona un modo cognitivo o envíame una instrucción."
-          : `Hilo de conversación limpio vinculado a la Isla Aislada [${island.toUpperCase()}]. El 100% de los recuerdos de este chat están confinados a este dominio.`,
-      island: island === "global" ? "CoreRules" : `Isla:${island}`,
-    },
-  ],
-});
+const PRACTICE_LANG_OPTIONS = [
+  { id: "auto", label: "🎙️ Auto Idioma" },
+  { id: "es", label: "🇲🇽 Español" },
+  { id: "en", label: "🇺🇸 Practicar Inglés" },
+  { id: "fr", label: "🇫🇷 Practicar Francés" },
+  { id: "de", label: "🇩🇪 Practicar Alemán" },
+  { id: "ja", label: "🇯🇵 Practicar Japonés" },
+];
+
+const BOB_VOICE_OPTIONS = [
+  { id: "bob_jorge", label: "🔊 Voz: Jorge (Oráculo MX)" },
+  { id: "bob_alvaro", label: "🔊 Voz: Álvaro (España)" },
+  { id: "bob_tomas", label: "🔊 Voz: Tomás (Argentina)" },
+  { id: "bob_christopher", label: "🔊 Voz: Christopher (US)" },
+  { id: "bob_ryan", label: "🔊 Voz: Ryan (UK)" },
+];
+
+const createDefaultSession = (island: string = "global"): ChatSession => {
+  const id = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  return {
+    id,
+    title: "Nueva conversación",
+    island,
+    workspacePath: `/home/daniel/proyectos/bob_workspaces/${id}`,
+    workspaceFiles: ["WORKSPACE_MANIFEST.md", "ERROR_LOG.md"],
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    messages: [
+      {
+        role: "bob",
+        content:
+          island === "global"
+            ? `Oráculo BOB v2.0 acoplado a AXIS. He creado y vinculado la carpeta exclusiva de este proyecto en ~/proyectos/bob_workspaces/${id} dentro de mi Hipocampo 4D para almacenar código, manifiestos, imágenes adjuntas y bitácoras de errores sin límite de ventana de contexto.`
+            : `Hilo de conversación limpio vinculado a la Isla Aislada [${island.toUpperCase()}] con carpeta de trabajo dedicada en ~/proyectos/bob_workspaces/${id}.`,
+        island: island === "global" ? "CoreRules" : `Isla:${island}`,
+      },
+    ],
+  };
+};
 
 export const BobModule: React.FC = () => {
   const [online, setOnline] = useState<boolean>(false);
@@ -146,6 +189,7 @@ export const BobModule: React.FC = () => {
 
   const [viewLayout, setViewLayout] = useState<"chat" | "split" | "graph">("split");
   const [showChatSidebar, setShowChatSidebar] = useState<boolean>(true);
+  const [showWorkspaceFilesModal, setShowWorkspaceFilesModal] = useState<boolean>(false);
 
   const [customIslands, setCustomIslands] = useState<CustomIslandSummary[]>([]);
   const [activeIsland, setActiveIsland] = useState<string>("global");
@@ -153,7 +197,6 @@ export const BobModule: React.FC = () => {
   const [newIslandName, setNewIslandName] = useState<string>("");
   const [newIslandDesc, setNewIslandDesc] = useState<string>("");
 
-  // Gestión de Múltiples Chats (Estilo Gemini / Claude / GPT)
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -164,7 +207,7 @@ export const BobModule: React.FC = () => {
         }
       }
     } catch {
-      // Ignorar errores de parseo
+      // Ignorar
     }
     return [createDefaultSession("global")];
   });
@@ -176,12 +219,27 @@ export const BobModule: React.FC = () => {
   const [editingTitle, setEditingTitle] = useState<string>("");
   const [chatFilterQuery, setChatFilterQuery] = useState<string>("");
 
-  // Persistir chats automáticamente en localStorage
+  // Estados de Voz, Menús Desplegables Personalizados (0% <select>) y Archivos Adjuntos
+  const [isRecordingVoice, setIsRecordingVoice] = useState<boolean>(false);
+  const [transcribingVoice, setTranscribingVoice] = useState<boolean>(false);
+  const [bobVoiceEnabled, setBobVoiceEnabled] = useState<boolean>(true);
+  const [bobVoiceId, setBobVoiceId] = useState<string>("bob_jorge");
+  const [practiceLang, setPracticeLang] = useState<string>("auto");
+  const [showLangMenu, setShowLangMenu] = useState<boolean>(false);
+  const [showVoiceMenu, setShowVoiceMenu] = useState<boolean>(false);
+
+  const [pendingAttachments, setPendingAttachments] = useState<AttachedItem[]>([]);
+  const [uploadingFile, setUploadingFile] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [marathonStatus, setMarathonStatus] = useState<any>(null);
+  const [maxMarathonCycles, setMaxMarathonCycles] = useState<number>(35);
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
     } catch {
-      // Silencioso si excede cuota
+      // Silencioso
     }
   }, [sessions]);
 
@@ -189,7 +247,7 @@ export const BobModule: React.FC = () => {
     sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const currentMessages = activeSession?.messages || [];
 
-  // Estado del Grafo Obsidian 4D
+  // Estado del Grafo 4D
   const [graphData, setGraphData] = useState<HippocampusGraphSnapshot | null>(null);
   const [graphSearch, setGraphSearch] = useState<string>("");
   const [graphIslandFilter, setGraphIslandFilter] = useState<string>("ALL");
@@ -221,12 +279,58 @@ export const BobModule: React.FC = () => {
     lastY: number;
   }>({ draggingNodeId: null, panning: false, lastX: 0, lastY: 0 });
 
-  // Funciones de Gestión de Chats
-  const handleCreateNewChat = (targetIsland: string = activeIsland) => {
+  // Inicializar en disco la carpeta del Workspace de la sesión activa
+  const initSessionWorkspaceOnBackend = async (sess: ChatSession) => {
+    try {
+      const r = await fetch("http://127.0.0.1:8086/session/workspace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sess.id,
+          title: sess.title,
+          island: sess.island,
+        }),
+      });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.ok) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === sess.id
+                ? {
+                    ...s,
+                    workspacePath: d.workspace_path,
+                    workspaceFiles: d.files || [],
+                  }
+                : s
+            )
+          );
+        }
+      }
+    } catch {
+      // Silencioso si el demonio aún está apagado
+    }
+  };
+
+  useEffect(() => {
+    if (online && activeSession) {
+      initSessionWorkspaceOnBackend(activeSession);
+    }
+  }, [online, activeSessionId]);
+
+  const handleCreateNewChat = async (targetIsland: string = activeIsland) => {
     const newChat = createDefaultSession(targetIsland);
     setSessions((prev) => [newChat, ...prev]);
     setActiveSessionId(newChat.id);
     setOpenThinkIdx(null);
+    setPendingAttachments([]);
+    if (online) {
+      await initSessionWorkspaceOnBackend(newChat);
+      setSyncMessage(
+        `📁 Nueva carpeta de proyecto creada y vinculada al Hipocampo: ${newChat.workspacePath}`
+      );
+      fetchGraphSnapshot();
+    }
   };
 
   const handleSelectChat = (session: ChatSession) => {
@@ -236,6 +340,7 @@ export const BobModule: React.FC = () => {
       session.island === "global" ? "ALL" : `custom:${session.island}`
     );
     setOpenThinkIdx(null);
+    setPendingAttachments([]);
   };
 
   const handleDeleteChat = (id: string, e: React.MouseEvent) => {
@@ -276,29 +381,405 @@ export const BobModule: React.FC = () => {
   const appendMessageToSession = (
     sessionId: string,
     msg: BobChatMessage,
-    newIslandSlug?: string
+    newIslandSlug?: string,
+    wsPath?: string,
+    wsFiles?: string[]
   ) => {
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id !== sessionId) return s;
-        // Auto-titular el chat con el primer mensaje del usuario
         let updatedTitle = s.title;
         if (
           msg.role === "user" &&
           (s.title === "Nueva conversación" || s.messages.length <= 1)
         ) {
-          const clean = msg.content.replace(/\s+/g, " ").trim();
+          const clean = msg.content
+            .replace("🎙️", "")
+            .replace(/\s+/g, " ")
+            .trim();
           updatedTitle = clean.length > 34 ? `${clean.slice(0, 34)}...` : clean;
         }
         return {
           ...s,
           title: updatedTitle,
           island: newIslandSlug || s.island,
+          workspacePath: wsPath || s.workspacePath,
+          workspaceFiles: wsFiles || s.workspaceFiles,
           updatedAt: Date.now(),
           messages: [...s.messages, msg],
         };
       })
     );
+  };
+
+  // 1. Selector Nativo de Archivos e Imágenes en Arch Linux (Botón 📎)
+  const handleNativePickFiles = async () => {
+    if (!online || uploadingFile) return;
+    setUploadingFile(true);
+    setSyncMessage("📂 Abriendo selector de archivos e imágenes de Arch Linux...");
+    try {
+      const r = await fetch("http://127.0.0.1:8086/session/pick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: activeSession.id,
+          title: activeSession.title,
+          island: activeIsland,
+        }),
+      });
+      const d = await r.json();
+      if (d.ok && Array.isArray(d.items)) {
+        const added = d.items.map((it: any) => ({
+          filename: it.filename,
+          savedPath: it.saved_path,
+          isImage: it.is_image,
+          previewDataUrl: it.preview_data_url,
+          summary: it.summary,
+        }));
+        setPendingAttachments((prev) => [...prev, ...added]);
+        if (Array.isArray(d.workspace_files)) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === activeSession.id
+                ? { ...s, workspaceFiles: d.workspace_files }
+                : s
+            )
+          );
+        }
+        setSyncMessage(
+          `📎 ${added.length} archivo(s)/imagen(es) vinculados al Workspace y al Hipocampo 4D.`
+        );
+        fetchGraphSnapshot();
+      } else {
+        setSyncMessage(d.error || "Selección cancelada.");
+      }
+    } catch (err: any) {
+      setSyncMessage(`Error al adjuntar archivo: ${String(err)}`);
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  // 2. Pegar Imágenes o Archivos con Ctrl + V (Soporta Clipboard Web y Wayland wl-paste)
+  const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
+    if (!online) return;
+    const items = e.clipboardData?.items;
+    let hasBrowserImageOrFile = false;
+
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === "file") {
+          hasBrowserImageOrFile = true;
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            await uploadSingleBrowserFile(file);
+          }
+        }
+      }
+    }
+
+    if (hasBrowserImageOrFile) return;
+
+    // Si el portapapeles de texto está vacío al presionar Ctrl+V, verificamos si hay una captura/imagen en Wayland (wl-paste)
+    const plainText = e.clipboardData?.getData("text/plain") || "";
+    if (!plainText.trim()) {
+      e.preventDefault();
+      await handleWaylandClipboardPaste();
+    }
+  };
+
+  const handleWaylandClipboardPaste = async () => {
+    if (!online || uploadingFile) return;
+    setUploadingFile(true);
+    setSyncMessage("📋 Leyendo imagen/archivo del portapapeles de Wayland (Ctrl+V)...");
+    try {
+      const r = await fetch("http://127.0.0.1:8086/session/paste", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: activeSession.id,
+          title: activeSession.title,
+          island: activeIsland,
+        }),
+      });
+      const d = await r.json();
+      if (d.ok && Array.isArray(d.items) && d.items.length > 0) {
+        const added = d.items.map((it: any) => ({
+          filename: it.filename,
+          savedPath: it.saved_path,
+          isImage: it.is_image,
+          previewDataUrl: it.preview_data_url,
+          summary: it.summary,
+        }));
+        setPendingAttachments((prev) => [...prev, ...added]);
+        if (Array.isArray(d.workspace_files)) {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === activeSession.id
+                ? { ...s, workspaceFiles: d.workspace_files }
+                : s
+            )
+          );
+        }
+        setSyncMessage(
+          `📋 Imagen pegada desde el portapapeles (${added[0].filename}) y analizada en el Hipocampo 4D.`
+        );
+        fetchGraphSnapshot();
+      } else {
+        setSyncMessage(d.error || "No se detectó imagen en el portapapeles.");
+      }
+    } catch (err: any) {
+      setSyncMessage(`Error leyendo portapapeles: ${String(err)}`);
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const uploadSingleBrowserFile = async (file: File) => {
+    setUploadingFile(true);
+    try {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
+      const base64Part = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+      const fname = file.name && file.name !== "image.png" ? file.name : `paste_${Date.now()}.png`;
+
+      const r = await fetch("http://127.0.0.1:8086/session/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: activeSession.id,
+          island: activeIsland,
+          filename: fname,
+          content_base64: base64Part,
+        }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        setPendingAttachments((prev) => [
+          ...prev,
+          {
+            filename: d.filename,
+            savedPath: d.saved_path,
+            isImage: d.is_image,
+            previewDataUrl: d.is_image ? dataUrl : undefined,
+            summary: d.summary,
+          },
+        ]);
+        setSyncMessage(`📋 Imagen '${d.filename}' adjuntada con éxito.`);
+        fetchGraphSnapshot();
+      }
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  // Manejo de subida de Archivos e Imágenes al Workspace de la Conversación
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFile(true);
+    for (const file of Array.from(files)) {
+      try {
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+
+        const base64Part = dataUrl.includes(",")
+          ? dataUrl.split(",")[1]
+          : dataUrl;
+
+        const r = await fetch("http://127.0.0.1:8086/session/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: activeSession.id,
+            island: activeIsland,
+            filename: file.name,
+            content_base64: base64Part,
+          }),
+        });
+
+        const d = await r.json();
+        if (d.ok) {
+          setPendingAttachments((prev) => [
+            ...prev,
+            {
+              filename: d.filename,
+              savedPath: d.saved_path,
+              isImage: d.is_image,
+              previewDataUrl: d.is_image ? dataUrl : undefined,
+              summary: d.summary,
+            },
+          ]);
+          if (Array.isArray(d.workspace_files)) {
+            setSessions((prev) =>
+              prev.map((s) =>
+                s.id === activeSession.id
+                  ? { ...s, workspaceFiles: d.workspace_files }
+                  : s
+              )
+            );
+          }
+          setSyncMessage(
+            `📎 ${d.is_image ? "Imagen" : "Archivo"} '${
+              d.filename
+            }' guardado en el Workspace de este chat e indexado en el Hipocampo 4D.`
+          );
+          fetchGraphSnapshot();
+        } else {
+          setSyncMessage(`Error subiendo ${file.name}: ${d.error}`);
+        }
+      } catch (err: any) {
+        setSyncMessage(`Error procesando archivo ${file.name}: ${String(err)}`);
+      }
+    }
+
+    setUploadingFile(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const fetchMarathonStatus = async () => {
+    try {
+      const r = await fetch("http://127.0.0.1:8086/marathon/status");
+      if (r.ok) {
+        const d = await r.json();
+        setMarathonStatus(d);
+      }
+    } catch {
+      // Silencioso
+    }
+  };
+
+  const speakBobText = async (text: string, customVoiceOrLang?: string) => {
+    try {
+      const targetVoice =
+        customVoiceOrLang &&
+        customVoiceOrLang !== "auto" &&
+        !customVoiceOrLang.startsWith("bob_")
+          ? customVoiceOrLang
+          : bobVoiceId;
+      await fetch("http://127.0.0.1:8086/voice/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, lang: targetVoice }),
+      });
+    } catch {
+      // Silencioso
+    }
+  };
+
+  const handleToggleVoice = async () => {
+    if (!online) return;
+    if (!isRecordingVoice) {
+      try {
+        await fetch("http://127.0.0.1:8086/voice/start", { method: "POST" });
+        setIsRecordingVoice(true);
+        setSyncMessage(
+          "🎙️ Escuchando tu micrófono en vivo... Habla y vuelve a presionar el botón blanco para que BOB te responda."
+        );
+      } catch (e: any) {
+        setSyncMessage(`Error iniciando micrófono: ${String(e)}`);
+      }
+    } else {
+      setIsRecordingVoice(false);
+      setTranscribingVoice(true);
+      setSyncMessage(
+        "⚡ Procesando voz y evaluando pronunciación con Whisper en Ryzen 9 CPU..."
+      );
+      try {
+        const r = await fetch("http://127.0.0.1:8086/voice/stop", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lang: practiceLang }),
+        });
+        const d = await r.json();
+        if (d.ok && d.text) {
+          const weakInfo =
+            d.weak_words && d.weak_words.length > 0
+              ? ` | Palabras a pulir: ${d.weak_words.join(", ")}`
+              : " | Pronunciación clara";
+          setSyncMessage(
+            `✓ Whisper STT [${(
+              d.language || "es"
+            ).toUpperCase()} — Claridad: ${d.pronunciation_score}%]: "${
+              d.text
+            }"${weakInfo}`
+          );
+
+          const promptToSend =
+            practiceLang !== "auto"
+              ? `${d.text}\n\n${d.phonetic_report}\n[MODO TUTOR DE IDIOMAS ACTIVO]: Responde a Daniel de forma conversacional y, si hubo palabras con claridad menor a 82% o detalles gramaticales, dale una breve retroalimentación de pronunciación al final.`
+              : d.text;
+
+          await sendQueryToBob(promptToSend, activeIsland, d.text, d.language);
+        } else {
+          setSyncMessage(
+            d.error || "No se detectó voz clara en la grabación."
+          );
+        }
+      } catch (e: any) {
+        setSyncMessage(`Error en Whisper STT: ${String(e)}`);
+      } finally {
+        setTranscribingVoice(false);
+      }
+    }
+  };
+
+  const handleLaunchBrowserBridge = async () => {
+    try {
+      const r = await fetch("http://127.0.0.1:8086/browser/launch", {
+        method: "POST",
+      });
+      const d = await r.json();
+      setSyncMessage(d.msg || "Navegador Puente iniciado en puerto 9222.");
+    } catch (e: any) {
+      setSyncMessage(`Error abriendo navegador puente: ${String(e)}`);
+    }
+  };
+
+  const handleStartMarathon = async () => {
+    if (!input.trim()) {
+      setSyncMessage(
+        "Escribe primero en la barra inferior el objetivo completo para el Modo Maratón."
+      );
+      return;
+    }
+    const goalText = input.trim();
+    setInput("");
+    try {
+      await fetch("http://127.0.0.1:8086/marathon/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goal: goalText,
+          max_cycles: maxMarathonCycles,
+        }),
+      });
+      setSyncMessage(
+        `⚡ Modo Maratón iniciado (${maxMarathonCycles} ciclos máx. con purga automática de KV Cache cada 5 ciclos).`
+      );
+      fetchMarathonStatus();
+    } catch (e: any) {
+      setSyncMessage(`Error iniciando Maratón: ${String(e)}`);
+    }
+  };
+
+  const handleStopMarathon = async () => {
+    await fetch("http://127.0.0.1:8086/marathon/stop", { method: "POST" });
+    fetchMarathonStatus();
+    setSyncMessage("Modo Maratón detenido por el usuario.");
   };
 
   const fetchGraphSnapshot = async () => {
@@ -310,7 +791,7 @@ export const BobModule: React.FC = () => {
         rebuildPhysicsNodes(snap);
       }
     } catch {
-      // Silencioso si el demonio está apagado
+      // Silencioso
     }
   };
 
@@ -415,6 +896,7 @@ export const BobModule: React.FC = () => {
           setCustomIslands(data.custom_islands);
         }
         fetchGraphSnapshot();
+        fetchMarathonStatus();
       }
     } catch {
       setOnline(false);
@@ -427,7 +909,6 @@ export const BobModule: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Motor Físico Obsidian 60 FPS
   useEffect(() => {
     if (viewLayout === "chat") return;
     let animationFrameId: number;
@@ -804,6 +1285,8 @@ export const BobModule: React.FC = () => {
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setShowIslandDropdown(false);
+    setShowLangMenu(false);
+    setShowVoiceMenu(false);
     const { wx, wy } = screenToWorld(e.clientX, e.clientY);
     for (let i = simNodesRef.current.length - 1; i >= 0; i--) {
       const n = simNodesRef.current[i];
@@ -934,12 +1417,33 @@ export const BobModule: React.FC = () => {
     await sendQueryToBob(commandText, activeIsland);
   };
 
-  const sendQueryToBob = async (userMsg: string, targetIsland: string) => {
+  const sendQueryToBob = async (
+    userMsg: string,
+    targetIsland: string,
+    displayOverride?: string,
+    detectedLang?: string
+  ) => {
     const currentSessionId = activeSession.id;
+    const attachmentsSnapshot = [...pendingAttachments];
+    setPendingAttachments([]);
+
+    let enrichedPrompt = userMsg;
+    if (attachmentsSnapshot.length > 0) {
+      const attBlock = attachmentsSnapshot
+        .map((a) => a.summary)
+        .join("\n\n");
+      enrichedPrompt = `${userMsg}\n\n[ARCHIVOS E IMÁGENES ADJUNTADOS POR DANIEL EN ESTE MENSAJE]:\n${attBlock}`;
+    }
+
     appendMessageToSession(currentSessionId, {
       role: "user",
-      content: userMsg,
+      content: displayOverride ? `🎙️ ${displayOverride}` : userMsg,
       mode,
+      attachments: attachmentsSnapshot.map((a) => ({
+        filename: a.filename,
+        isImage: a.isImage,
+        previewDataUrl: a.previewDataUrl,
+      })),
     });
     setLoading(true);
 
@@ -963,8 +1467,7 @@ export const BobModule: React.FC = () => {
         axisSnapshot = "Módulo Axis conectado.";
       }
 
-      // Enviamos tanto el ID de la Sesión de Chat como la Isla del Hipocampo
-      const payloadMessage = `[SESSION:${currentSessionId}][ISLAND:${targetIsland}] ${userMsg}`;
+      const payloadMessage = `[SESSION:${currentSessionId}][ISLAND:${targetIsland}] ${enrichedPrompt}`;
       const raw = await invoke<string>("ask_bob_agent", {
         message: payloadMessage,
         mode,
@@ -1005,8 +1508,20 @@ export const BobModule: React.FC = () => {
           tools_used: res.tools_used,
           mode,
         },
-        destinationIsland
+        destinationIsland,
+        res.workspace_path,
+        res.workspace_files
       );
+
+      if (bobVoiceEnabled && res.answer) {
+        const voiceTarget =
+          practiceLang !== "auto"
+            ? practiceLang
+            : detectedLang && detectedLang !== "es"
+            ? detectedLang
+            : bobVoiceId;
+        speakBobText(res.answer, voiceTarget);
+      }
 
       fetchGraphSnapshot();
     } catch (e: any) {
@@ -1023,8 +1538,10 @@ export const BobModule: React.FC = () => {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg = input.trim();
+    if ((!input.trim() && pendingAttachments.length === 0) || loading) return;
+    const userMsg =
+      input.trim() ||
+      "Analiza los archivos/imágenes que acabo de adjuntar en el Workspace de esta conversación.";
     setInput("");
     await sendQueryToBob(userMsg, activeIsland);
   };
@@ -1034,6 +1551,13 @@ export const BobModule: React.FC = () => {
       ? "Todas las Islas (4D)"
       : graphData?.islands.find((i) => i.id === graphIslandFilter)?.name ||
         graphIslandFilter;
+
+  const currentPracticeLangLabel =
+    PRACTICE_LANG_OPTIONS.find((o) => o.id === practiceLang)?.label ||
+    "🎙️ Auto Idioma";
+  const currentBobVoiceLabel =
+    BOB_VOICE_OPTIONS.find((o) => o.id === bobVoiceId)?.label ||
+    "🔊 Voz: Jorge (Oráculo MX)";
 
   const filteredSessions = sessions.filter((s) => {
     const q = chatFilterQuery.trim().toLowerCase();
@@ -1135,7 +1659,7 @@ export const BobModule: React.FC = () => {
               }`}
             >
               <Network className="w-3.5 h-3.5" />
-              Cerebro 4D (Obsidian)
+              Cerebro 4D
             </button>
           </div>
 
@@ -1149,6 +1673,15 @@ export const BobModule: React.FC = () => {
               {waking ? "Cargando GPU..." : "Despertar a BOB"}
             </button>
           )}
+          <button
+            onClick={handleLaunchBrowserBridge}
+            disabled={!online}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white disabled:opacity-40 text-xs font-semibold border border-zinc-600 transition cursor-pointer"
+            title="Abre tu navegador conectado al puerto 9222 para consultar a Gemini o resolver Quizes"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Navegador Puente (Gemini/Quizes)
+          </button>
           <button
             onClick={handleSyncEcosystem}
             disabled={!online || loading}
@@ -1269,9 +1802,9 @@ export const BobModule: React.FC = () => {
         </div>
       )}
 
-      {/* Cuerpo Principal: [Sidebar de Chats] + [Consola Activa] + [Grafo Obsidian 4D] */}
+      {/* Cuerpo Principal */}
       <div className="flex-1 flex gap-3.5 overflow-hidden min-h-0">
-        {/* PANEL LATERAL DE CHATS (ESTILO GEMINI / CLAUDE / GPT) */}
+        {/* PANEL LATERAL DE CHATS */}
         {viewLayout !== "graph" && showChatSidebar && (
           <div className="w-64 shrink-0 flex flex-col bg-zinc-900/75 border border-zinc-700/80 rounded-xl p-3 gap-2.5 h-full overflow-hidden">
             <button
@@ -1279,7 +1812,7 @@ export const BobModule: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-mono font-bold transition cursor-pointer shadow-sm"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              Nuevo Chat ({activeIsland.toUpperCase()})
+              Nuevo Chat + Carpeta
             </button>
 
             <div className="relative">
@@ -1294,7 +1827,7 @@ export const BobModule: React.FC = () => {
             </div>
 
             <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-1 pt-1">
-              Historial de Sesiones ({filteredSessions.length})
+              Sesiones & Workspaces ({filteredSessions.length})
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
@@ -1384,6 +1917,7 @@ export const BobModule: React.FC = () => {
                           isCurrent ? "text-zinc-700" : "text-zinc-400"
                         }
                       >
+                        {(sess.workspaceFiles || []).length} files ·{" "}
                         {sess.messages.length} msgs
                       </span>
                     </div>
@@ -1396,8 +1930,8 @@ export const BobModule: React.FC = () => {
 
         {/* COLUMNA CENTRAL: CONSOLA COGNITIVA DEL CHAT ACTIVO */}
         {(viewLayout === "chat" || viewLayout === "split") && (
-          <div className="flex-1 flex flex-col gap-3 h-full overflow-hidden min-w-0">
-            {/* Barra de Modos Cognitivos + Título del Chat Activo */}
+          <div className="flex-1 flex flex-col gap-2.5 h-full overflow-hidden min-w-0">
+            {/* Barra de Modos + Insignia de Carpeta de Proyecto Activa */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
                 {[
@@ -1410,6 +1944,11 @@ export const BobModule: React.FC = () => {
                   { id: "rem", label: "/rem (Sueño)", icon: Sparkles },
                   { id: "web", label: "/web", icon: Globe },
                   { id: "quiron", label: "/quiron", icon: ShieldAlert },
+                  {
+                    id: "marathon",
+                    label: "Autopiloto Maratón",
+                    icon: Zap,
+                  },
                 ].map((item) => {
                   const Icon = item.icon;
                   const active = mode === item.id;
@@ -1430,10 +1969,61 @@ export const BobModule: React.FC = () => {
                 })}
               </div>
 
-              <span className="text-xs font-mono text-zinc-300 bg-zinc-900 border border-zinc-700 px-2.5 py-1 rounded-lg truncate max-w-xs">
-                Chat: <strong className="text-white">{activeSession?.title}</strong>
-              </span>
+              {/* Botón de Carpeta de Proyecto del Chat Activo */}
+              <button
+                onClick={() =>
+                  setShowWorkspaceFilesModal(!showWorkspaceFilesModal)
+                }
+                className="flex items-center gap-1.5 text-xs font-mono text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-500 px-3 py-1 rounded-lg cursor-pointer transition"
+                title={`Carpeta dedicada en Hipocampo: ${
+                  activeSession?.workspacePath || ""
+                }`}
+              >
+                <FolderGit2 className="w-3.5 h-3.5 text-white" />
+                <span>
+                  Workspace ({(activeSession?.workspaceFiles || []).length}{" "}
+                  archivos)
+                </span>
+              </button>
             </div>
+
+            {/* Desplegable de Archivos en el Workspace de esta Conversación */}
+            {showWorkspaceFilesModal && (
+              <div className="bg-zinc-900 border border-zinc-600 rounded-xl p-3 font-mono text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-bold flex items-center gap-1.5">
+                    <FolderGit2 className="w-4 h-4" />
+                    Carpeta Persistente del Chat:{" "}
+                    <span className="text-zinc-300 font-normal">
+                      {activeSession?.workspacePath}
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => setShowWorkspaceFilesModal(false)}
+                    className="text-zinc-400 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {(activeSession?.workspaceFiles || []).map((f, i) => (
+                    <button
+                      key={i}
+                      onClick={() =>
+                        setInput(
+                          `Lee el archivo "${activeSession?.workspacePath}/${f}" de nuestro Workspace y continúa trabajando sobre él.`
+                        )
+                      }
+                      className="px-2.5 py-1 rounded bg-zinc-950 hover:bg-white hover:text-zinc-950 text-zinc-200 border border-zinc-700 text-[11px] flex items-center gap-1.5 transition cursor-pointer"
+                      title="Haz clic para pedirle a BOB que relea este archivo"
+                    >
+                      <FileCode className="w-3 h-3" />
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Mensajes del Chat Activo */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 select-text">
@@ -1455,14 +2045,24 @@ export const BobModule: React.FC = () => {
                         : "BOB (ORÁCULO LOCAL)"}
                     </span>
 
-                    {m.role === "bob" && m.island && (
+                    {m.role === "bob" && (
                       <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] text-zinc-300">
-                        <span className="px-2 py-0.5 rounded bg-zinc-800 text-white border border-zinc-600 font-semibold">
-                          {m.island}
-                          {m.similarity !== undefined
-                            ? ` (${m.similarity.toFixed(2)})`
-                            : ""}
-                        </span>
+                        <button
+                          onClick={() => speakBobText(m.content)}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 hover:bg-white hover:text-zinc-950 text-white border border-zinc-600 transition cursor-pointer"
+                          title="Escuchar esta respuesta con la voz de BOB"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          Escuchar
+                        </button>
+                        {m.island && (
+                          <span className="px-2 py-0.5 rounded bg-zinc-800 text-white border border-zinc-600 font-semibold">
+                            {m.island}
+                            {m.similarity !== undefined
+                              ? ` (${m.similarity.toFixed(2)})`
+                              : ""}
+                          </span>
+                        )}
                         {m.thalamus_us !== undefined && (
                           <span>Tálamo: {m.thalamus_us.toFixed(1)}µs</span>
                         )}
@@ -1475,6 +2075,29 @@ export const BobModule: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Miniaturas de Archivos e Imágenes Adjuntadas en el Mensaje */}
+                  {m.attachments && m.attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2.5">
+                      {m.attachments.map((att, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 bg-zinc-950 border border-zinc-700 rounded-lg p-1.5 text-xs font-mono text-zinc-200"
+                        >
+                          {att.isImage && att.previewDataUrl ? (
+                            <img
+                              src={att.previewDataUrl}
+                              alt={att.filename}
+                              className="w-12 h-12 object-cover rounded border border-zinc-700"
+                            />
+                          ) : (
+                            <FileCode className="w-4 h-4 text-white" />
+                          )}
+                          <span>{att.filename}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {m.tools_used && m.tools_used.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-2">
@@ -1519,20 +2142,281 @@ export const BobModule: React.FC = () => {
               ))}
             </div>
 
-            {/* Input Inferior */}
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-700 rounded-xl p-2">
+            {/* Panel en Vivo del Modo Maratón */}
+            {(mode === "marathon" || marathonStatus?.running) && (
+              <div className="bg-zinc-900/95 border border-zinc-500 rounded-xl p-3 space-y-2 font-mono text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        marathonStatus?.running
+                          ? "bg-white animate-ping"
+                          : "bg-zinc-500"
+                      }`}
+                    />
+                    <span className="font-bold text-white uppercase">
+                      Autopiloto Maratón{" "}
+                      {marathonStatus?.running
+                        ? `(Ciclo ${marathonStatus.current_cycle}/${marathonStatus.max_cycles})`
+                        : "(Listo)"}
+                    </span>
+                    <span className="text-zinc-400">
+                      | Axiomas KV Salvados:{" "}
+                      <strong className="text-white">
+                        {marathonStatus?.axioms_crystallized || 0}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400">Máx Ciclos:</span>
+                    <input
+                      type="number"
+                      value={maxMarathonCycles}
+                      onChange={(e) =>
+                        setMaxMarathonCycles(Number(e.target.value) || 30)
+                      }
+                      className="w-16 bg-zinc-950 border border-zinc-600 rounded px-2 py-0.5 text-white text-center"
+                    />
+                    {marathonStatus?.running ? (
+                      <button
+                        onClick={handleStopMarathon}
+                        className="px-3 py-1 rounded bg-white text-zinc-950 font-bold hover:bg-zinc-200 cursor-pointer"
+                      >
+                        Detener Maratón
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleStartMarathon}
+                        className="px-3 py-1 rounded bg-white text-zinc-950 font-bold hover:bg-zinc-200 cursor-pointer"
+                      >
+                        Iniciar Maratón con Orden Inferior
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {marathonStatus?.logs && marathonStatus.logs.length > 0 && (
+                  <div className="max-h-32 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-lg p-2 space-y-1 text-[11px]">
+                    {marathonStatus.logs.slice(-6).map((lg: any, i: number) => (
+                      <div key={i} className="text-zinc-300">
+                        <span className="text-white font-bold">
+                          [Ciclo {lg.cycle}]
+                        </span>{" "}
+                        {lg.kv_purged && (
+                          <span className="px-1.5 py-0.2 bg-zinc-800 text-white rounded mr-1">
+                            KV Purged + Axioma
+                          </span>
+                        )}
+                        {lg.action_summary}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Previsualización de Archivos e Imágenes Adjuntos antes de Enviar */}
+            {pendingAttachments.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 bg-zinc-900/90 border border-zinc-600 rounded-xl p-2">
+                {pendingAttachments.map((att, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 bg-zinc-950 border border-zinc-500 rounded-lg px-2.5 py-1 text-xs font-mono text-white"
+                  >
+                    {att.isImage && att.previewDataUrl ? (
+                      <img
+                        src={att.previewDataUrl}
+                        alt={att.filename}
+                        className="w-7 h-7 object-cover rounded border border-zinc-600"
+                      />
+                    ) : (
+                      <FileCode className="w-3.5 h-3.5 text-white" />
+                    )}
+                    <span className="max-w-[160px] truncate">
+                      {att.filename}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setPendingAttachments((prev) =>
+                          prev.filter((_, i) => i !== idx)
+                        )
+                      }
+                      className="text-zinc-400 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Barra de Entrada 100% Monocromática con Alto Contraste (CERO etiquetas <select>) */}
+            <div className="flex flex-wrap items-center gap-2 bg-zinc-900 border border-zinc-700 rounded-xl p-2 relative">
+              {/* Input oculto para subir Archivos e Imágenes */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.rs,.py,.ts,.tsx,.js,.json,.toml,.md,.txt,.csv,.html,.css,.sh,.sql,.yaml,.yml"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              {/* Botón Adjuntar Imagen o Archivo (Selector Nativo Arch Linux) */}
+              <button
+                onClick={handleNativePickFiles}
+                disabled={!online || uploadingFile}
+                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-500 transition cursor-pointer flex items-center justify-center"
+                title="Abrir selector de archivos e imágenes de Arch Linux"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+
+              {/* Botón Pegar Captura/Imagen del Portapapeles (o presiona Ctrl+V en el texto) */}
+              <button
+                onClick={handleWaylandClipboardPaste}
+                disabled={!online || uploadingFile}
+                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-500 transition cursor-pointer flex items-center justify-center"
+                title="Pegar imagen o captura directamente del portapapeles (Ctrl+V)"
+              >
+                <ImageIcon className="w-4 h-4" />
+              </button>
+
+              {/* Botón Micrófono Whisper */}
+              <button
+                onClick={handleToggleVoice}
+                disabled={!online || transcribingVoice}
+                className={`p-2 rounded-lg border transition cursor-pointer flex items-center justify-center ${
+                  isRecordingVoice
+                    ? "bg-white text-zinc-950 border-white animate-pulse font-bold"
+                    : "bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-500"
+                }`}
+                title={
+                  isRecordingVoice
+                    ? "Detener y enviar a BOB"
+                    : "Hablar con BOB en tiempo real (Whisper CPU)"
+                }
+              >
+                {isRecordingVoice ? (
+                  <Square className="w-4 h-4 fill-current" />
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
+              </button>
+
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                onPaste={handlePaste}
+                onKeyDown={(e) => {
+                  if (e.ctrlKey && (e.key === "v" || e.key === "V")) {
+                    // Si el portapapeles tiene una imagen en Wayland, pegarla automáticamente
+                    setTimeout(() => {
+                      if (!input.trim()) {
+                        handleWaylandClipboardPaste();
+                      }
+                    }, 80);
+                  }
+                  if (e.key === "Enter") handleSend();
+                }}
                 placeholder={
                   activeIsland !== "global"
-                    ? `Mensaje en "${activeSession?.title}" [Isla: ${activeIsland.toUpperCase()}]...`
-                    : `Mensaje en "${activeSession?.title}" [Hipocampo Global]...`
+                    ? `Mensaje o archivo en "${activeSession?.title}" [Isla: ${activeIsland.toUpperCase()}]...`
+                    : `Mensaje, código o imagen en "${activeSession?.title}"...`
                 }
-                className="flex-1 bg-transparent px-2.5 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none"
+                className="flex-1 min-w-[160px] bg-transparent px-2.5 py-1.5 text-sm text-white placeholder-zinc-400 focus:outline-none"
               />
+
+              {/* Dropdown Personalizado de Idioma (Alto Contraste Oscuro — Evita el blanco de GTK) */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowLangMenu(!showLangMenu);
+                    setShowVoiceMenu(false);
+                  }}
+                  className="flex items-center justify-between gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-500 text-white rounded-lg px-2.5 py-1.5 text-[11px] font-mono font-semibold cursor-pointer"
+                  title="Idioma de escucha y evaluación de pronunciación"
+                >
+                  <span>{currentPracticeLangLabel}</span>
+                  <ChevronUp className="w-3 h-3 text-zinc-200" />
+                </button>
+
+                {showLangMenu && (
+                  <div className="absolute bottom-full mb-1.5 right-0 w-48 bg-zinc-900 border border-zinc-500 rounded-xl shadow-2xl py-1 z-50 font-mono text-xs">
+                    {PRACTICE_LANG_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          setPracticeLang(opt.id);
+                          setShowLangMenu(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 flex items-center justify-between cursor-pointer ${
+                          practiceLang === opt.id
+                            ? "bg-white text-zinc-950 font-bold"
+                            : "text-zinc-100 hover:bg-zinc-800"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Dropdown Personalizado de Voz de BOB (Alto Contraste Oscuro — Evita el blanco de GTK) */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowVoiceMenu(!showVoiceMenu);
+                    setShowLangMenu(false);
+                  }}
+                  className="flex items-center justify-between gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-500 text-white rounded-lg px-2.5 py-1.5 text-[11px] font-mono font-semibold cursor-pointer"
+                  title="Voz neuronal asignada a BOB"
+                >
+                  <span>{currentBobVoiceLabel}</span>
+                  <ChevronUp className="w-3 h-3 text-zinc-200" />
+                </button>
+
+                {showVoiceMenu && (
+                  <div className="absolute bottom-full mb-1.5 right-0 w-56 bg-zinc-900 border border-zinc-500 rounded-xl shadow-2xl py-1 z-50 font-mono text-xs">
+                    {BOB_VOICE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          setBobVoiceId(opt.id);
+                          setShowVoiceMenu(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 flex items-center justify-between cursor-pointer ${
+                          bobVoiceId === opt.id
+                            ? "bg-white text-zinc-950 font-bold"
+                            : "text-zinc-100 hover:bg-zinc-800"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Botón Activar/Silenciar Respuesta Hablada Automática de BOB */}
+              <button
+                onClick={() => setBobVoiceEnabled(!bobVoiceEnabled)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[11px] font-mono transition cursor-pointer ${
+                  bobVoiceEnabled
+                    ? "bg-white text-zinc-950 border-white font-bold"
+                    : "bg-zinc-800 text-zinc-300 border-zinc-600"
+                }`}
+                title="Activar o desactivar que BOB hable automáticamente al responder"
+              >
+                {bobVoiceEnabled ? (
+                  <Volume2 className="w-3.5 h-3.5" />
+                ) : (
+                  <VolumeX className="w-3.5 h-3.5" />
+                )}
+                {bobVoiceEnabled ? "Voz ON" : "Mudo"}
+              </button>
+
               <button
                 onClick={handleSend}
                 disabled={loading}
@@ -1545,7 +2429,7 @@ export const BobModule: React.FC = () => {
           </div>
         )}
 
-        {/* COLUMNA DERECHA: VISOR TOPOLÓGICO DEL CEREBRO DE BOB (ESTILO OBSIDIAN) */}
+        {/* COLUMNA DERECHA: VISOR TOPOLÓGICO DEL CEREBRO DE BOB */}
         {(viewLayout === "split" || viewLayout === "graph") && (
           <div
             className={`${

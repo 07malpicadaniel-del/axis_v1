@@ -16,7 +16,7 @@
     "current_branch": "main",
     "is_clean": true,
     "last_commit": "fix(backend): eliminar referencia huerfana a groq en api::mod y estabilizar compilacion",
-    "last_commit_time": "3 weeks ago",
+    "last_commit_time": "4 weeks ago",
     "tag": "Systems"
   },
   {
@@ -45,8 +45,8 @@
     "path": "/home/daniel/proyectos/axis_v1",
     "current_branch": "main",
     "is_clean": false,
-    "last_commit": "mejora en UI de bob module",
-    "last_commit_time": "27 minutes ago",
+    "last_commit": "nuevos chats",
+    "last_commit_time": "2 days ago",
     "tag": "Rust / Tauri"
   },
   {
@@ -54,9 +54,9 @@
     "name": "bob_engine",
     "path": "/home/daniel/proyectos/bob_engine",
     "current_branch": "main",
-    "is_clean": true,
-    "last_commit": "cerebro/hipocampo de vectores",
-    "last_commit_time": "28 minutes ago",
+    "is_clean": false,
+    "last_commit": "newchat",
+    "last_commit_time": "2 days ago",
     "tag": "Rust"
   },
   {
@@ -76,7 +76,7 @@
     "current_branch": "main",
     "is_clean": false,
     "last_commit": "Commit inicial: Entorno maestro Hyprland",
-    "last_commit_time": "5 months ago",
+    "last_commit_time": "6 months ago",
     "tag": "Systems"
   },
   {
@@ -86,7 +86,7 @@
     "current_branch": "main",
     "is_clean": true,
     "last_commit": "Primer commit: Estructura base de la presentacion",
-    "last_commit_time": "8 weeks ago",
+    "last_commit_time": "9 weeks ago",
     "tag": "React"
   },
   {
@@ -146,7 +146,7 @@
     "current_branch": "main",
     "is_clean": false,
     "last_commit": "feat: streaming H.264 NVENC con decodificación nativa MediaCodec y latencia ultra-baja",
-    "last_commit_time": "2 weeks ago",
+    "last_commit_time": "3 weeks ago",
     "tag": "Kotlin"
   },
   {
@@ -176,7 +176,7 @@
     "current_branch": "main",
     "is_clean": true,
     "last_commit": "feat: implementar cinematica de historia completa, fix de navegacion molex y actualizacion a qwen 2.5",
-    "last_commit_time": "2 weeks ago",
+    "last_commit_time": "3 weeks ago",
     "tag": "React"
   },
   {
