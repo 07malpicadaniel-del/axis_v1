@@ -37,6 +37,7 @@ import {
   Paperclip,
   FolderGit2,
   FileCode,
+  BookOpen,
   Image as ImageIcon,
 } from "lucide-react";
 
@@ -190,6 +191,11 @@ export const BobModule: React.FC = () => {
   const [viewLayout, setViewLayout] = useState<"chat" | "split" | "graph">("split");
   const [showChatSidebar, setShowChatSidebar] = useState<boolean>(true);
   const [showWorkspaceFilesModal, setShowWorkspaceFilesModal] = useState<boolean>(false);
+  const [showSkillsModal, setShowSkillsModal] = useState<boolean>(false);
+  const [skillsList, setSkillsList] = useState<any[]>([]);
+  const [selectedSkill, setSelectedSkill] = useState<any | null>(null);
+  const [editingSkillContent, setEditingSkillContent] = useState<string>("");
+  const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
 
   const [customIslands, setCustomIslands] = useState<CustomIslandSummary[]>([]);
   const [activeIsland, setActiveIsland] = useState<string>("global");
@@ -650,6 +656,46 @@ export const BobModule: React.FC = () => {
     }
   };
 
+  const fetchSkills = async () => {
+    try {
+      const r = await fetch("http://127.0.0.1:8086/skills");
+      if (r.ok) {
+        const d = await r.json();
+        if (Array.isArray(d.skills)) {
+          setSkillsList(d.skills);
+          if (!selectedSkill && d.skills.length > 0) {
+            setSelectedSkill(d.skills[0]);
+            setEditingSkillContent(d.skills[0].content);
+          }
+        }
+      }
+    } catch {
+      // Silencioso
+    }
+  };
+
+  const handleSaveSkillFromUI = async () => {
+    if (!selectedSkill) return;
+    try {
+      const r = await fetch("http://127.0.0.1:8086/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedSkill.slug,
+          content: editingSkillContent,
+        }),
+      });
+      const d = await r.json();
+      if (d.ok) {
+        setSkillsList(d.skills || []);
+        setSyncMessage(`🧠 Skill '${selectedSkill.slug}.md' actualizada y re-indexada en el Hipocampo 4D.`);
+        fetchGraphSnapshot();
+      }
+    } catch (e: any) {
+      setSyncMessage(`Error guardando Skill: ${String(e)}`);
+    }
+  };
+
   const fetchMarathonStatus = async () => {
     try {
       const r = await fetch("http://127.0.0.1:8086/marathon/status");
@@ -897,6 +943,7 @@ export const BobModule: React.FC = () => {
         }
         fetchGraphSnapshot();
         fetchMarathonStatus();
+        fetchSkills();
       }
     } catch {
       setOnline(false);
@@ -1930,7 +1977,25 @@ export const BobModule: React.FC = () => {
 
         {/* COLUMNA CENTRAL: CONSOLA COGNITIVA DEL CHAT ACTIVO */}
         {(viewLayout === "chat" || viewLayout === "split") && (
-          <div className="flex-1 flex flex-col gap-2.5 h-full overflow-hidden min-w-0">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDraggingOver(true);
+            }}
+            onDragLeave={() => setIsDraggingOver(false)}
+            onDrop={async (e) => {
+              e.preventDefault();
+              setIsDraggingOver(false);
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                for (const f of Array.from(e.dataTransfer.files)) {
+                  await uploadSingleBrowserFile(f);
+                }
+              }
+            }}
+            className={`flex-1 flex flex-col gap-2.5 h-full overflow-hidden min-w-0 ${
+              isDraggingOver ? "ring-2 ring-white rounded-xl p-1" : ""
+            }`}
+          >
             {/* Barra de Modos + Insignia de Carpeta de Proyecto Activa */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
@@ -1969,11 +2034,30 @@ export const BobModule: React.FC = () => {
                 })}
               </div>
 
-              {/* Botón de Carpeta de Proyecto del Chat Activo */}
-              <button
-                onClick={() =>
-                  setShowWorkspaceFilesModal(!showWorkspaceFilesModal)
-                }
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setShowSkillsModal(!showSkillsModal);
+                    setShowWorkspaceFilesModal(false);
+                    fetchSkills();
+                  }}
+                  className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1 rounded-lg border cursor-pointer transition ${
+                    showSkillsModal
+                      ? "bg-white text-zinc-950 border-white font-bold"
+                      : "text-white bg-zinc-800 hover:bg-zinc-700 border-zinc-500"
+                  }`}
+                  title="Ver y editar las Skills procedimentales (.md) almacenadas en el Hipocampo de BOB"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Skills .md ({skillsList.length})</span>
+                </button>
+
+                {/* Botón de Carpeta de Proyecto del Chat Activo */}
+                <button
+                  onClick={() => {
+                    setShowWorkspaceFilesModal(!showWorkspaceFilesModal);
+                    setShowSkillsModal(false);
+                  }}
                 className="flex items-center gap-1.5 text-xs font-mono text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-500 px-3 py-1 rounded-lg cursor-pointer transition"
                 title={`Carpeta dedicada en Hipocampo: ${
                   activeSession?.workspacePath || ""
@@ -1984,8 +2068,75 @@ export const BobModule: React.FC = () => {
                   Workspace ({(activeSession?.workspaceFiles || []).length}{" "}
                   archivos)
                 </span>
-              </button>
+                </button>
+              </div>
             </div>
+
+            {/* Panel Interactivo de Memoria Procedimental: Skills (.md) en el Hipocampo */}
+            {showSkillsModal && (
+              <div className="bg-zinc-900 border border-zinc-500 rounded-xl p-3 font-mono text-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-zinc-700 pb-2">
+                  <span className="text-white font-bold flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    MEMORIA PROCEDIMENTAL DE BOB — SKILLS (.MD EN HIPOCAMPO 4D)
+                  </span>
+                  <button
+                    onClick={() => setShowSkillsModal(false)}
+                    className="text-zinc-400 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {skillsList.map((sk) => (
+                    <button
+                      key={sk.slug}
+                      onClick={() => {
+                        setSelectedSkill(sk);
+                        setEditingSkillContent(sk.content);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] cursor-pointer transition ${
+                        selectedSkill?.slug === sk.slug
+                          ? "bg-white text-zinc-950 border-white font-bold"
+                          : "bg-zinc-950 text-zinc-200 border-zinc-700 hover:border-zinc-400"
+                      }`}
+                    >
+                      {sk.slug}.md
+                    </button>
+                  ))}
+                </div>
+                {selectedSkill && (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editingSkillContent}
+                      onChange={(e) => setEditingSkillContent(e.target.value)}
+                      rows={7}
+                      className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-[11px] text-zinc-100 font-mono focus:outline-none focus:border-white"
+                    />
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-zinc-400">{selectedSkill.path}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setInput(`Aplica paso a paso tu Skill "${selectedSkill.slug}.md" para resolver y ejecutar la tarea actual.`);
+                            setShowSkillsModal(false);
+                          }}
+                          className="px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600 text-[11px] cursor-pointer"
+                        >
+                          Usar Skill en el Chat
+                        </button>
+                        <button
+                          onClick={handleSaveSkillFromUI}
+                          className="px-3 py-1 rounded bg-white text-zinc-950 font-bold hover:bg-zinc-200 text-[11px] cursor-pointer"
+                        >
+                          Guardar Cambios en .md + Hipocampo
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Desplegable de Archivos en el Workspace de esta Conversación */}
             {showWorkspaceFilesModal && (
@@ -2194,6 +2345,38 @@ export const BobModule: React.FC = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Misiones Desatendidas de 1 Clic (Co-Evolución con Gemini, Automejora y Benchmarks) */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-zinc-800">
+                  <span className="text-[10px] text-zinc-400 uppercase">Misiones Autónomas:</span>
+                  <button
+                    onClick={() => {
+                      const g = "Usa [TOOL:GEMINI_READ_CHAT] para leer el último mensaje de Gemini en mi navegador, contéstale tú mismo directamente en ese chat con [TOOL:ASK_GEMINI] presentándole tus métricas actuales ([TOOL:RUN_BENCHMARK]), discute con él una mejora para tu arquitectura en Rust y aplícala con [TOOL:SELF_MUTATE].";
+                      setInput(g);
+                    }}
+                    className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-white hover:text-zinc-950 text-zinc-100 border border-zinc-600 text-[11px] transition cursor-pointer"
+                  >
+                    💬 Contestar a Gemini en Este Chat + Co-Evolucionar
+                  </button>
+                  <button
+                    onClick={() => {
+                      const g = "Inicia un ciclo de automejora desatendida: ejecuta [TOOL:RUN_BENCHMARK], inspecciona tu propio código en /home/daniel/proyectos/bob_engine, aplica optimizaciones seguras usando [TOOL:SELF_MUTATE], verifica que compilen con exit=0 y actualiza tus Skills (.md) con lo aprendido.";
+                      setInput(g);
+                    }}
+                    className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-white hover:text-zinc-950 text-zinc-100 border border-zinc-600 text-[11px] transition cursor-pointer"
+                  >
+                    🧬 Automejora Desatendida (Self-Mutate + Rollback)
+                  </button>
+                  <button
+                    onClick={() => {
+                      const g = "Ejecuta [TOOL:RUN_BENCHMARK] para medir tu latencia de Embeddings CPU, Tálamo SIMD, Hipocampo HNSW y Oráculo rustc; luego inspecciona si hay un examen o test abierto en mi navegador con [TOOL:BROWSER_INSPECT] y resuélvelo autónomamente.";
+                      setInput(g);
+                    }}
+                    className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-white hover:text-zinc-950 text-zinc-100 border border-zinc-600 text-[11px] transition cursor-pointer"
+                  >
+                    📊 Ejecutar Suite de Benchmarks + Exámenes
+                  </button>
+                </div>
                 {marathonStatus?.logs && marathonStatus.logs.length > 0 && (
                   <div className="max-h-32 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-lg p-2 space-y-1 text-[11px]">
                     {marathonStatus.logs.slice(-6).map((lg: any, i: number) => (
@@ -2251,25 +2434,24 @@ export const BobModule: React.FC = () => {
 
             {/* Barra de Entrada 100% Monocromática con Alto Contraste (CERO etiquetas <select>) */}
             <div className="flex flex-wrap items-center gap-2 bg-zinc-900 border border-zinc-700 rounded-xl p-2 relative">
-              {/* Input oculto para subir Archivos e Imágenes */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,.rs,.py,.ts,.tsx,.js,.json,.toml,.md,.txt,.csv,.html,.css,.sh,.sql,.yaml,.yml"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-
-              {/* Botón Adjuntar Imagen o Archivo (Selector Nativo Arch Linux) */}
-              <button
-                onClick={handleNativePickFiles}
-                disabled={!online || uploadingFile}
-                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-500 transition cursor-pointer flex items-center justify-center"
-                title="Abrir selector de archivos e imágenes de Arch Linux"
+              {/* Selector HTML5 Nativo mediante <label> (Nunca es bloqueado por WebKit2GTK en Wayland) */}
+              <label
+                htmlFor="bob-native-file-input"
+                className={`p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-500 transition flex items-center justify-center ${
+                  !online || uploadingFile ? "opacity-40 pointer-events-none" : "cursor-pointer"
+                }`}
+                title="Adjuntar imagen (.png, .jpg) o archivo de código (.rs, .kt, .py, .md, .json)"
               >
                 <Paperclip className="w-4 h-4" />
-              </button>
+                <input
+                  id="bob-native-file-input"
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="sr-only"
+                />
+              </label>
 
               {/* Botón Pegar Captura/Imagen del Portapapeles (o presiona Ctrl+V en el texto) */}
               <button

@@ -45,8 +45,8 @@
     "path": "/home/daniel/proyectos/axis_v1",
     "current_branch": "main",
     "is_clean": false,
-    "last_commit": "nuevos chats",
-    "last_commit_time": "2 days ago",
+    "last_commit": "mejora de ui",
+    "last_commit_time": "3 days ago",
     "tag": "Rust / Tauri"
   },
   {
@@ -55,8 +55,8 @@
     "path": "/home/daniel/proyectos/bob_engine",
     "current_branch": "main",
     "is_clean": false,
-    "last_commit": "newchat",
-    "last_commit_time": "2 days ago",
+    "last_commit": "mejora de ui",
+    "last_commit_time": "3 days ago",
     "tag": "Rust"
   },
   {
@@ -106,7 +106,7 @@
     "current_branch": "main",
     "is_clean": false,
     "last_commit": "actualizacion de lore",
-    "last_commit_time": "5 weeks ago",
+    "last_commit_time": "6 weeks ago",
     "tag": "Kotlin"
   },
   {
@@ -226,7 +226,7 @@
     "current_branch": "main",
     "is_clean": false,
     "last_commit": "feat: actualiza lógica y pantallas de la app de tareas",
-    "last_commit_time": "3 weeks ago",
+    "last_commit_time": "4 weeks ago",
     "tag": "Kotlin"
   },
   {
@@ -236,7 +236,7 @@
     "current_branch": "main",
     "is_clean": false,
     "last_commit": "Fix: Sincronización de props y bypass de auth",
-    "last_commit_time": "5 months ago",
+    "last_commit_time": "6 months ago",
     "tag": "React"
   },
   {
