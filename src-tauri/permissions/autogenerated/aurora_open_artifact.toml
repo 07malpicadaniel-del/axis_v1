@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-aurora-open-artifact"
+description = "Enables the aurora_open_artifact command without any pre-configured scope."
+commands.allow = ["aurora_open_artifact"]
+
+[[permission]]
+identifier = "deny-aurora-open-artifact"
+description = "Denies the aurora_open_artifact command without any pre-configured scope."
+commands.deny = ["aurora_open_artifact"]

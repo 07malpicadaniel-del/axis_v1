@@ -224,6 +224,14 @@ export const AuroraModule: React.FC = () => {
     }
   };
 
+  const handleOpenArtifact = async (ruta: string) => {
+    try {
+      await auroraApi.openArtifact(ruta);
+    } catch (err) {
+      setFeedback({ tipo: 'error', mensaje: extraerMensajeError(err) });
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-screen bg-zinc-950 text-zinc-100 overflow-hidden">
       <CommandCenterBar
@@ -283,6 +291,7 @@ export const AuroraModule: React.FC = () => {
             onOptOut={(prospectoId, campanaId, motivo) =>
               handleOptOut(prospectoId, motivo, campanaId)
             }
+            onOpenArtifact={handleOpenArtifact}
           />
         )}
 

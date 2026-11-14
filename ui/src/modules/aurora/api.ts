@@ -44,6 +44,8 @@ export const auroraApi = {
   getPulseStatus: () => invoke<PulseEstadoResponse>('aurora_get_pulse_status'),
   runDpoConsolidation: () =>
     invoke<DpoConsolidarResponse>('aurora_run_dpo_consolidation'),
+  openArtifact: (ruta: string) =>
+    invoke<void>('aurora_open_artifact', { ruta }),
 };
 
 export function extraerMensajeError(err: unknown): string {

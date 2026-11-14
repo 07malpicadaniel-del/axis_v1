@@ -46,6 +46,7 @@
     "allow-aurora-reject-order",
     "allow-aurora-trigger-opt-out",
     "allow-aurora-get-pulse-status",
-    "allow-aurora-run-dpo-consolidation"
+    "allow-aurora-run-dpo-consolidation",
+    "allow-aurora-open-artifact"
   ]
 }

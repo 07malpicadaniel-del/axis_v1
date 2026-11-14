@@ -1,6 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Check,
+  ChevronDown,
   ExternalLink,
+  MapPin,
   Network,
   Play,
   Search,
@@ -33,19 +36,153 @@ interface OsintTelaranaPanelProps {
   onTriggerOptOut: (prospectoId: string, motivo: string) => Promise<void>;
 }
 
-const SUBVERTICALES_INMOBILIARIA: SubverticalInmobiliaria[] = [
-  'Preventa',
-  'Residencial',
-  'ComercialIndustrial',
+const SUBVERTICALES_INMOBILIARIA: Array<{ value: SubverticalInmobiliaria; label: string }> = [
+  { value: 'Preventa', label: 'Preventa' },
+  { value: 'Residencial', label: 'Residencial' },
+  { value: 'ComercialIndustrial', label: 'Comercial / Industrial' },
 ];
 
-const SUBVERTICALES_SEGUROS: SubverticalSeguros[] = [
-  'Vida',
-  'Gmm',
-  'HombreClave',
-  'Educativo',
-  'Patrimonial',
+const SUBVERTICALES_SEGUROS: Array<{ value: SubverticalSeguros; label: string }> = [
+  { value: 'Vida', label: 'Vida' },
+  { value: 'Gmm', label: 'Gastos Médicos Mayores' },
+  { value: 'HombreClave', label: 'Hombre Clave' },
+  { value: 'Educativo', label: 'Educativo' },
+  { value: 'Patrimonial', label: 'Patrimonial' },
 ];
+
+const SECTORES_OPCIONES: Array<{ value: 'Inmobiliaria' | 'Seguros'; label: string }> = [
+  { value: 'Inmobiliaria', label: 'Inmobiliaria' },
+  { value: 'Seguros', label: 'Seguros' },
+];
+
+interface GeoPreset {
+  etiqueta: string;
+  ciudad: string;
+  estado: string;
+  zona: string;
+}
+
+const PRESETS_GEOGRAFICOS: GeoPreset[] = [
+  {
+    etiqueta: 'Veracruz / Boca del Río',
+    ciudad: 'Boca del Río',
+    estado: 'Veracruz',
+    zona: 'Corredor Logístico Portuario / Costa de Oro',
+  },
+  {
+    etiqueta: 'Monterrey / San Pedro',
+    ciudad: 'Monterrey',
+    estado: 'Nuevo León',
+    zona: 'San Pedro Garza García / Valle Oriente',
+  },
+  {
+    etiqueta: 'CDMX / Santa Fe',
+    ciudad: 'Ciudad de México',
+    estado: 'CDMX',
+    zona: 'Santa Fe / Polanco',
+  },
+  {
+    etiqueta: 'Guadalajara / Puerta de Hierro',
+    ciudad: 'Zapopan',
+    estado: 'Jalisco',
+    zona: 'Puerta de Hierro / El Salto',
+  },
+];
+
+interface DarkSelectProps<T extends string> {
+  label: string;
+  value: T;
+  options: Array<{ value: T; label: string }>;
+  onChange: (value: T) => void;
+}
+
+function DarkSelect<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: DarkSelectProps<T>) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
+  const currentLabel =
+    options.find((opt) => opt.value === value)?.label ?? value;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+        {label}
+      </label>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-full flex items-center justify-between gap-2 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-zinc-700 px-2.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600 transition-colors text-left"
+      >
+        <span className="truncate">{currentLabel}</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute z-30 mt-1 w-full rounded-lg bg-zinc-900 border border-zinc-700 shadow-xl py-1 max-h-56 overflow-y-auto"
+        >
+          {options.map((opt) => {
+            const selected = opt.value === value;
+            return (
+              <li key={opt.value} role="option" aria-selected={selected}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs text-left transition-colors ${
+                    selected
+                      ? 'bg-emerald-500/15 text-emerald-300 font-medium'
+                      : 'text-zinc-200 hover:bg-zinc-800'
+                  }`}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  {selected && <Check className="w-3.5 h-3.5 shrink-0 text-emerald-400" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export const OsintTelaranaPanel: React.FC<OsintTelaranaPanelProps> = ({
   daemonOnline,
@@ -148,51 +285,59 @@ export const OsintTelaranaPanel: React.FC<OsintTelaranaPanelProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div>
-            <label className="block text-[11px] font-medium text-zinc-400 mb-1">
-              Sector
-            </label>
-            <select
-              value={sector}
-              onChange={(e) => setSector(e.target.value as 'Inmobiliaria' | 'Seguros')}
-              className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-2.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
-            >
-              <option value="Inmobiliaria">Inmobiliaria</option>
-              <option value="Seguros">Seguros</option>
-            </select>
-          </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400 mr-1">
+            <MapPin className="w-3 h-3 text-emerald-400" />
+            Plazas rápidas:
+          </span>
+          {PRESETS_GEOGRAFICOS.map((preset) => {
+            const active =
+              ciudad.trim().toLowerCase() === preset.ciudad.toLowerCase() &&
+              estado.trim().toLowerCase() === preset.estado.toLowerCase();
+            return (
+              <button
+                key={preset.etiqueta}
+                type="button"
+                onClick={() => {
+                  setCiudad(preset.ciudad);
+                  setEstado(preset.estado);
+                  setZona(preset.zona);
+                }}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                  active
+                    ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                }`}
+              >
+                {preset.etiqueta}
+              </button>
+            );
+          })}
+        </div>
 
-          <div>
-            <label className="block text-[11px] font-medium text-zinc-400 mb-1">
-              Subvertical
-            </label>
-            {sector === 'Inmobiliaria' ? (
-              <select
-                value={subInmob}
-                onChange={(e) => setSubInmob(e.target.value as SubverticalInmobiliaria)}
-                className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-2.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
-              >
-                {SUBVERTICALES_INMOBILIARIA.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <select
-                value={subSeg}
-                onChange={(e) => setSubSeg(e.target.value as SubverticalSeguros)}
-                className="w-full rounded-lg bg-zinc-950 border border-zinc-800 px-2.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-600"
-              >
-                {SUBVERTICALES_SEGUROS.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <DarkSelect
+            label="Sector"
+            value={sector}
+            options={SECTORES_OPCIONES}
+            onChange={(val) => setSector(val)}
+          />
+
+          {sector === 'Inmobiliaria' ? (
+            <DarkSelect
+              label="Subvertical"
+              value={subInmob}
+              options={SUBVERTICALES_INMOBILIARIA}
+              onChange={(val) => setSubInmob(val)}
+            />
+          ) : (
+            <DarkSelect
+              label="Subvertical"
+              value={subSeg}
+              options={SUBVERTICALES_SEGUROS}
+              onChange={(val) => setSubSeg(val)}
+            />
+          )}
 
           <div>
             <label className="block text-[11px] font-medium text-zinc-400 mb-1">

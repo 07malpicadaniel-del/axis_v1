@@ -225,6 +225,12 @@
           "markdownDescription": "Enables the aurora_list_gatekeeper command without any pre-configured scope."
         },
         {
+          "description": "Enables the aurora_open_artifact command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-open-artifact",
+          "markdownDescription": "Enables the aurora_open_artifact command without any pre-configured scope."
+        },
+        {
           "description": "Enables the aurora_reject_order command without any pre-configured scope.",
           "type": "string",
           "const": "allow-aurora-reject-order",
@@ -475,6 +481,12 @@
           "type": "string",
           "const": "deny-aurora-list-gatekeeper",
           "markdownDescription": "Denies the aurora_list_gatekeeper command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_open_artifact command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-open-artifact",
+          "markdownDescription": "Denies the aurora_open_artifact command without any pre-configured scope."
         },
         {
           "description": "Denies the aurora_reject_order command without any pre-configured scope.",

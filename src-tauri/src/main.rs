@@ -60,6 +60,7 @@ fn main() {
             axis_module_aurora::commands::aurora_trigger_opt_out,
             axis_module_aurora::commands::aurora_get_pulse_status,
             axis_module_aurora::commands::aurora_run_dpo_consolidation,
+            axis_module_aurora::commands::aurora_open_artifact,
         ])
         .run(tauri::generate_context!())
     {

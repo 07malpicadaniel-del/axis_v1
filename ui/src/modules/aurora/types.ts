@@ -287,7 +287,8 @@ export interface CalentamientoPendiente {
 export interface MetadatosArtefacto {
   ruta_nvme: string;
   sha256_hex: string;
-  hash_contenido_u64: number;
+  fnv1a_64_hex?: string;
+  hash_contenido_u64?: number;
   tamano_bytes: number;
   duracion_ms?: number | null;
   tiempo_renderizado_ms: number;

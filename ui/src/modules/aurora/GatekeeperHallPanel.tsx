@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import {
+  Captions,
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Copy,
+  ExternalLink,
   FileText,
   Film,
+  FolderOpen,
   Mic,
   Send,
   ShieldAlert,
@@ -12,7 +17,11 @@ import {
   XCircle,
 } from 'lucide-react';
 import { formatearVertical } from './api';
-import type { GatekeeperPendientesResponse, OrdenPendienteDto } from './types';
+import type {
+  GatekeeperPendientesResponse,
+  MetadatosArtefacto,
+  OrdenPendienteDto,
+} from './types';
 
 interface GatekeeperHallPanelProps {
   daemonOnline: boolean;
@@ -22,6 +31,7 @@ interface GatekeeperHallPanelProps {
   onApprove: (ordenId: string, despacharInmediatamente: boolean) => Promise<void>;
   onReject: (ordenId: string, motivo: string) => Promise<void>;
   onOptOut: (prospectoId: string, campanaId: string, motivo: string) => Promise<void>;
+  onOpenArtifact: (ruta: string) => Promise<void>;
 }
 
 export const GatekeeperHallPanel: React.FC<GatekeeperHallPanelProps> = ({
@@ -32,12 +42,36 @@ export const GatekeeperHallPanel: React.FC<GatekeeperHallPanelProps> = ({
   onApprove,
   onReject,
   onOptOut,
+  onOpenArtifact,
 }) => {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [motivoRechazo, setMotivoRechazo] = useState('');
   const [despachoInmediato, setDespachoInmediato] = useState<Record<string, boolean>>({});
   const [expandedScenes, setExpandedScenes] = useState<Record<string, boolean>>({});
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
+  const [openingPath, setOpeningPath] = useState<string | null>(null);
+
+  const handleCopyPath = async (ruta: string) => {
+    try {
+      await navigator.clipboard.writeText(ruta);
+      setCopiedPath(ruta);
+      window.setTimeout(() => {
+        setCopiedPath((prev) => (prev === ruta ? null : prev));
+      }, 1800);
+    } catch {
+      // Clipboard API puede no estar disponible fuera de contexto seguro; ignoramos sin romper UI.
+    }
+  };
+
+  const handleOpen = async (ruta: string) => {
+    setOpeningPath(ruta);
+    try {
+      await onOpenArtifact(ruta);
+    } finally {
+      setOpeningPath((prev) => (prev === ruta ? null : prev));
+    }
+  };
 
   const pendientes = cola?.ordenes ?? [];
   const historial = cola?.historial_reciente ?? [];
@@ -228,46 +262,119 @@ export const GatekeeperHallPanel: React.FC<GatekeeperHallPanelProps> = ({
                 )}
 
                 {orden.paquete_manufacturado && (
-                  <div className="rounded-xl bg-emerald-950/20 border border-emerald-500/30 p-3.5 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
+                  <div className="rounded-xl bg-emerald-950/20 border border-emerald-500/30 p-3.5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                       <span className="font-semibold text-emerald-300">
                         Paquete Manufacturado Verificado (SHA-256 en NVMe)
                       </span>
-                      <span className="font-mono text-[11px] text-zinc-400 truncate max-w-md">
-                        {orden.paquete_manufacturado.directorio_salida}
-                      </span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          title={orden.paquete_manufacturado.directorio_salida}
+                          className="font-mono text-[11px] text-zinc-400 truncate max-w-md select-all"
+                        >
+                          {orden.paquete_manufacturado.directorio_salida}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void handleOpen(orden.paquete_manufacturado!.directorio_salida)
+                          }
+                          disabled={openingPath === orden.paquete_manufacturado.directorio_salida}
+                          className="inline-flex items-center gap-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 px-2 py-1 text-[11px] text-zinc-200 transition-colors disabled:opacity-50"
+                        >
+                          <FolderOpen className="w-3 h-3 text-emerald-400" />
+                          Abrir carpeta
+                        </button>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]">
-                      <div className="flex items-center gap-2 rounded-lg bg-zinc-950/90 border border-zinc-800 p-2">
-                        <FileText className="w-4 h-4 text-sky-400 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-zinc-200 font-medium truncate">Dossier PDF</p>
-                          <p className="text-zinc-500 font-mono truncate">
-                            {orden.paquete_manufacturado.dossier_pdf.tamano_bytes} bytes ·{' '}
-                            {orden.paquete_manufacturado.dossier_pdf.sha256_hex.slice(0, 12)}...
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px]">
+                      {(
+                        [
+                          {
+                            titulo: 'Dossier PDF',
+                            icono: <FileText className="w-4 h-4 text-sky-400 shrink-0" />,
+                            meta: orden.paquete_manufacturado.dossier_pdf,
+                          },
+                          {
+                            titulo: 'Nota de Voz WAV',
+                            icono: <Mic className="w-4 h-4 text-amber-400 shrink-0" />,
+                            meta: orden.paquete_manufacturado.nota_voz_wav,
+                          },
+                          {
+                            titulo: 'Reel Vertical MP4',
+                            icono: <Film className="w-4 h-4 text-emerald-400 shrink-0" />,
+                            meta: orden.paquete_manufacturado.reel_vertical_mp4,
+                          },
+                          {
+                            titulo: 'Subtítulos SRT',
+                            icono: <Captions className="w-4 h-4 text-violet-400 shrink-0" />,
+                            meta: orden.paquete_manufacturado.subtitulos_srt,
+                          },
+                        ] as Array<{
+                          titulo: string;
+                          icono: React.ReactNode;
+                          meta: MetadatosArtefacto;
+                        }>
+                      ).map(({ titulo, icono, meta }) => (
+                        <div
+                          key={`${orden.orden_id}-${titulo}`}
+                          className="rounded-lg bg-zinc-950/90 border border-zinc-800 p-2.5 space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {icono}
+                              <span className="text-zinc-100 font-medium truncate">
+                                {titulo}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => void handleOpen(meta.ruta_nvme)}
+                                disabled={openingPath === meta.ruta_nvme}
+                                className="inline-flex items-center gap-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-300 transition-colors disabled:opacity-50"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                Abrir
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleCopyPath(meta.ruta_nvme)}
+                                className="inline-flex items-center gap-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 px-2 py-0.5 text-[10px] font-medium text-zinc-300 transition-colors"
+                              >
+                                {copiedPath === meta.ruta_nvme ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-400" />
+                                    Copiado
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    Copiar
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+
+                          <p
+                            title={meta.ruta_nvme}
+                            className="text-zinc-400 font-mono text-[10px] break-all select-all"
+                          >
+                            {meta.ruta_nvme}
                           </p>
+
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-zinc-500 font-mono text-[10px]">
+                            <span>{meta.tamano_bytes.toLocaleString('es-MX')} bytes</span>
+                            <span>· sha256 {meta.sha256_hex.slice(0, 14)}...</span>
+                            <span>· {meta.tiempo_renderizado_ms} ms</span>
+                            {meta.duracion_ms != null && (
+                              <span>· {(meta.duracion_ms / 1000).toFixed(1)}s</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 rounded-lg bg-zinc-950/90 border border-zinc-800 p-2">
-                        <Mic className="w-4 h-4 text-amber-400 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-zinc-200 font-medium truncate">Nota Voz WAV</p>
-                          <p className="text-zinc-500 font-mono truncate">
-                            {orden.paquete_manufacturado.nota_voz_wav.tamano_bytes} bytes ·{' '}
-                            {orden.paquete_manufacturado.nota_voz_wav.sha256_hex.slice(0, 12)}...
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 rounded-lg bg-zinc-950/90 border border-zinc-800 p-2">
-                        <Film className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-zinc-200 font-medium truncate">Reel MP4 + SRT</p>
-                          <p className="text-zinc-500 font-mono truncate">
-                            {orden.paquete_manufacturado.reel_vertical_mp4.tamano_bytes} bytes ·{' '}
-                            {orden.paquete_manufacturado.reel_vertical_mp4.sha256_hex.slice(0, 12)}...
-                          </p>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 )}

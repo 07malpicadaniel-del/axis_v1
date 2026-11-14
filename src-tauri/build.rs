@@ -43,6 +43,7 @@ fn main() {
             "aurora_trigger_opt_out",
             "aurora_get_pulse_status",
             "aurora_run_dpo_consolidation",
+            "aurora_open_artifact",
         ]),
     );
 
