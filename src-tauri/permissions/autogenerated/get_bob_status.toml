@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-bob-status"
+description = "Enables the get_bob_status command without any pre-configured scope."
+commands.allow = ["get_bob_status"]
+
+[[permission]]
+identifier = "deny-get-bob-status"
+description = "Denies the get_bob_status command without any pre-configured scope."
+commands.deny = ["get_bob_status"]

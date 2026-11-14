@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
+use std::os::unix::net::UnixStream;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
@@ -30,13 +31,52 @@ pub fn get_system_status() -> Result<SystemStatus, String> {
     })
 }
 
+fn bob_uds_or_tcp_request(
+    method: &str,
+    path: &str,
+    json_body: Option<&str>,
+    timeout_ms: Option<u64>,
+) -> Option<String> {
+    let mut ustream = UnixStream::connect("/tmp/bob_axis.sock").ok()?;
+    let read_to = timeout_ms.map(Duration::from_millis);
+    let _ = ustream.set_read_timeout(read_to);
+    let _ = ustream.set_write_timeout(None);
+
+    let body_bytes = json_body.unwrap_or("").as_bytes();
+    let req = format!(
+        "{} {} HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        method,
+        path,
+        body_bytes.len()
+    );
+    ustream.write_all(req.as_bytes()).ok()?;
+    if !body_bytes.is_empty() {
+        ustream.write_all(body_bytes).ok()?;
+    }
+    let _ = ustream.flush();
+
+    let mut resp_bytes = Vec::new();
+    ustream.read_to_end(&mut resp_bytes).ok()?;
+    let resp = String::from_utf8_lossy(&resp_bytes).to_string();
+    Some(if let Some(idx) = resp.find("\r\n\r\n") {
+        resp[idx + 4..].to_string()
+    } else {
+        resp
+    })
+}
+
 fn bob_http_request(
     method: &str,
     path: &str,
     json_body: Option<&str>,
     timeout_ms: Option<u64>,
 ) -> Result<String, String> {
-    let addr: SocketAddr = "127.0.0.1:8086".parse().unwrap();
+    if path == "/status" || path == "/chat" {
+        if let Some(uds_resp) = bob_uds_or_tcp_request(method, path, json_body, timeout_ms) {
+            return Ok(uds_resp);
+        }
+    }
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8086));
     let mut stream = TcpStream::connect_timeout(&addr, Duration::from_millis(2500))
         .map_err(|_| "BOB Daemon apagado (puerto 8086 inactivo)".to_string())?;
 
@@ -87,6 +127,14 @@ pub async fn wake_bob_daemon() -> Result<String, String> {
     if bob_http_request("GET", "/status", None, Some(1500)).is_ok() {
         return Ok("BOB ya está despierto y activo en el puerto 8086.".to_string());
     }
+    if let Ok(out) = Command::new("pgrep").args(["-f", "bob_agent"]).output() {
+        if out.status.success() && !out.stdout.is_empty() {
+            return Ok("BOB ya se está inicializando en segundo plano (cargando las 99 capas en la RTX 5060 Ti). Espera ~10 segundos...".to_string());
+        }
+    }
+    if false {
+        return Ok("BOB ya está despierto y activo en el puerto 8086.".to_string());
+    }
 
     let home = std::env::var("HOME").unwrap_or_else(|_| "/home/daniel".to_string());
     let bob_dir = format!("{}/proyectos/bob_engine", home);
@@ -102,7 +150,6 @@ pub async fn wake_bob_daemon() -> Result<String, String> {
 
     let log_err = OpenOptions::new()
         .create(true)
-        .write(true)
         .append(true)
         .open("/tmp/bob_daemon.log")
         .map(Stdio::from)

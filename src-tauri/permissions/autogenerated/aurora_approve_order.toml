@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-aurora-approve-order"
+description = "Enables the aurora_approve_order command without any pre-configured scope."
+commands.allow = ["aurora_approve_order"]
+
+[[permission]]
+identifier = "deny-aurora-approve-order"
+description = "Denies the aurora_approve_order command without any pre-configured scope."
+commands.deny = ["aurora_approve_order"]

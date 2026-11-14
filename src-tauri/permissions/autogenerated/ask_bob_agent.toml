@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ask-bob-agent"
+description = "Enables the ask_bob_agent command without any pre-configured scope."
+commands.allow = ["ask_bob_agent"]
+
+[[permission]]
+identifier = "deny-ask-bob-agent"
+description = "Denies the ask_bob_agent command without any pre-configured scope."
+commands.deny = ["ask_bob_agent"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-delete-schedule-slot"
+description = "Enables the lifestyle_delete_schedule_slot command without any pre-configured scope."
+commands.allow = ["lifestyle_delete_schedule_slot"]
+
+[[permission]]
+identifier = "deny-lifestyle-delete-schedule-slot"
+description = "Denies the lifestyle_delete_schedule_slot command without any pre-configured scope."
+commands.deny = ["lifestyle_delete_schedule_slot"]

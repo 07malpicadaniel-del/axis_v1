@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-get-schedule"
+description = "Enables the lifestyle_get_schedule command without any pre-configured scope."
+commands.allow = ["lifestyle_get_schedule"]
+
+[[permission]]
+identifier = "deny-lifestyle-get-schedule"
+description = "Denies the lifestyle_get_schedule command without any pre-configured scope."
+commands.deny = ["lifestyle_get_schedule"]

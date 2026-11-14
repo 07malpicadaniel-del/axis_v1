@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-delete-task"
+description = "Enables the lifestyle_delete_task command without any pre-configured scope."
+commands.allow = ["lifestyle_delete_task"]
+
+[[permission]]
+identifier = "deny-lifestyle-delete-task"
+description = "Denies the lifestyle_delete_task command without any pre-configured scope."
+commands.deny = ["lifestyle_delete_task"]

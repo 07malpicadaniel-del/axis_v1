@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-delete-habit"
+description = "Enables the lifestyle_delete_habit command without any pre-configured scope."
+commands.allow = ["lifestyle_delete_habit"]
+
+[[permission]]
+identifier = "deny-lifestyle-delete-habit"
+description = "Denies the lifestyle_delete_habit command without any pre-configured scope."
+commands.deny = ["lifestyle_delete_habit"]

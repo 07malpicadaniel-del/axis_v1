@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-aurora-get-subgrafo"
+description = "Enables the aurora_get_subgrafo command without any pre-configured scope."
+commands.allow = ["aurora_get_subgrafo"]
+
+[[permission]]
+identifier = "deny-aurora-get-subgrafo"
+description = "Denies the aurora_get_subgrafo command without any pre-configured scope."
+commands.deny = ["aurora_get_subgrafo"]

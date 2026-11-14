@@ -58,6 +58,28 @@ export interface AuroraIpcError {
   http_status?: number | null;
 }
 
+export type ModoEjecucion =
+  | 'real_con_fallback'
+  | 'estricto_real'
+  | 'simulado_offline';
+
+export interface EstadoSubsistema {
+  nombre: string;
+  disponible: boolean;
+  modo_real_activo: boolean;
+  detalle: string;
+  ruta_o_endpoint: string;
+}
+
+export interface ReporteSubsistemas {
+  bob_llm: EstadoSubsistema;
+  piper_tts: EstadoSubsistema;
+  chromium_headless: EstadoSubsistema;
+  ffmpeg_nvenc: EstadoSubsistema;
+  cdp_browser: EstadoSubsistema;
+  smtp_transport: EstadoSubsistema;
+}
+
 export interface AuroraHealthState {
   status: string;
   online: boolean;
@@ -65,11 +87,13 @@ export interface AuroraHealthState {
   version?: string;
   bind_addr?: string;
   modo_offline?: boolean;
+  modo_ejecucion?: ModoEjecucion;
   bob_url?: string;
   bob_online?: boolean;
   bob_slot_id?: number;
   hardware_vram_modelo?: string;
   hardware_ram_sistema?: string;
+  subsistemas?: ReporteSubsistemas;
   nodos_4d?: number;
   aristas_4d?: number;
   ordenes_pendientes?: number;

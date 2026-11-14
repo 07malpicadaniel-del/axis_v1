@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-delete-saving-goal"
+description = "Enables the lifestyle_delete_saving_goal command without any pre-configured scope."
+commands.allow = ["lifestyle_delete_saving_goal"]
+
+[[permission]]
+identifier = "deny-lifestyle-delete-saving-goal"
+description = "Denies the lifestyle_delete_saving_goal command without any pre-configured scope."
+commands.deny = ["lifestyle_delete_saving_goal"]

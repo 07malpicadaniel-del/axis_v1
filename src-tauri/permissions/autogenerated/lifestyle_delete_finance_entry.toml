@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-delete-finance-entry"
+description = "Enables the lifestyle_delete_finance_entry command without any pre-configured scope."
+commands.allow = ["lifestyle_delete_finance_entry"]
+
+[[permission]]
+identifier = "deny-lifestyle-delete-finance-entry"
+description = "Denies the lifestyle_delete_finance_entry command without any pre-configured scope."
+commands.deny = ["lifestyle_delete_finance_entry"]

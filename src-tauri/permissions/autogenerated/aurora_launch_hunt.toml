@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-aurora-launch-hunt"
+description = "Enables the aurora_launch_hunt command without any pre-configured scope."
+commands.allow = ["aurora_launch_hunt"]
+
+[[permission]]
+identifier = "deny-aurora-launch-hunt"
+description = "Denies the aurora_launch_hunt command without any pre-configured scope."
+commands.deny = ["aurora_launch_hunt"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-create-task"
+description = "Enables the lifestyle_create_task command without any pre-configured scope."
+commands.allow = ["lifestyle_create_task"]
+
+[[permission]]
+identifier = "deny-lifestyle-create-task"
+description = "Denies the lifestyle_create_task command without any pre-configured scope."
+commands.deny = ["lifestyle_create_task"]

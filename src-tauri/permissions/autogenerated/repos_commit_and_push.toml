@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-repos-commit-and-push"
+description = "Enables the repos_commit_and_push command without any pre-configured scope."
+commands.allow = ["repos_commit_and_push"]
+
+[[permission]]
+identifier = "deny-repos-commit-and-push"
+description = "Denies the repos_commit_and_push command without any pre-configured scope."
+commands.deny = ["repos_commit_and_push"]

@@ -11,9 +11,36 @@ import {
   Sparkles,
   Terminal,
 } from 'lucide-react';
-import type { AuroraHealthState } from './types';
+import type { AuroraHealthState, EstadoSubsistema } from './types';
 
 export type AuroraTabId = 'osint' | 'gatekeeper' | 'pulse';
+
+function formatearModoEjecucion(health: AuroraHealthState | null): {
+  etiqueta: string;
+  clases: string;
+} | null {
+  if (!health?.online) {
+    return null;
+  }
+  const modo = health.modo_ejecucion ?? (health.modo_offline ? 'simulado_offline' : 'real_con_fallback');
+  switch (modo) {
+    case 'estricto_real':
+      return {
+        etiqueta: 'Estricto Real',
+        clases: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+      };
+    case 'real_con_fallback':
+      return {
+        etiqueta: 'Híbrido Real',
+        clases: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
+      };
+    case 'simulado_offline':
+      return {
+        etiqueta: 'Mock Determinista',
+        clases: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
+      };
+  }
+}
 
 interface CommandCenterBarProps {
   health: AuroraHealthState | null;
@@ -39,6 +66,22 @@ export const CommandCenterBar: React.FC<CommandCenterBarProps> = ({
   onRunDpo,
 }) => {
   const isOnline = Boolean(health?.online);
+  const modoBadge = formatearModoEjecucion(health);
+  const subsistemasLista: Array<{ key: string; label: string; data: EstadoSubsistema }> =
+    health?.subsistemas
+      ? [
+          { key: 'bob_llm', label: 'BOB LLM', data: health.subsistemas.bob_llm },
+          { key: 'piper_tts', label: 'Piper TTS', data: health.subsistemas.piper_tts },
+          {
+            key: 'chromium_headless',
+            label: 'Chromium',
+            data: health.subsistemas.chromium_headless,
+          },
+          { key: 'ffmpeg_nvenc', label: 'FFmpeg / NVENC', data: health.subsistemas.ffmpeg_nvenc },
+          { key: 'cdp_browser', label: 'CDP :9222', data: health.subsistemas.cdp_browser },
+          { key: 'smtp_transport', label: 'SMTP TLS', data: health.subsistemas.smtp_transport },
+        ]
+      : [];
 
   return (
     <header className="border-b border-zinc-800/80 bg-zinc-950/95 px-6 py-4 space-y-4 shrink-0">
@@ -66,9 +109,11 @@ export const CommandCenterBar: React.FC<CommandCenterBarProps> = ({
                 />
                 {isOnline ? 'Daemon Online' : 'DaemonOffline'}
               </span>
-              {health?.modo_offline && (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-500/10 text-sky-300 border border-sky-500/30">
-                  Mock Determinista
+              {modoBadge && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${modoBadge.clases}`}
+                >
+                  {modoBadge.etiqueta}
                 </span>
               )}
               {wsConnected && (
@@ -201,6 +246,42 @@ export const CommandCenterBar: React.FC<CommandCenterBarProps> = ({
           </p>
         </div>
       </div>
+
+      {isOnline && subsistemasLista.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          {subsistemasLista.map(({ key, label, data }) => {
+            const real = data.modo_real_activo;
+            const ok = data.disponible;
+            const dotClass = real
+              ? 'bg-emerald-400'
+              : ok
+                ? 'bg-sky-400'
+                : 'bg-amber-400';
+            const cardClass = real
+              ? 'border-emerald-500/25 bg-emerald-950/15 text-emerald-200'
+              : ok
+                ? 'border-sky-500/25 bg-sky-950/15 text-sky-200'
+                : 'border-amber-500/25 bg-amber-950/15 text-amber-200';
+            const statusText = real ? 'Real' : ok ? 'Mock' : 'Fallback';
+            return (
+              <div
+                key={key}
+                title={`${data.nombre}: ${data.detalle} (${data.ruta_o_endpoint})`}
+                className={`rounded-lg border px-2.5 py-1.5 text-[11px] transition-colors ${cardClass}`}
+              >
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 font-medium truncate">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
+                    {label}
+                  </span>
+                  <span className="font-mono text-[10px] opacity-85 shrink-0">{statusText}</span>
+                </div>
+                <p className="text-[10px] opacity-75 truncate mt-0.5">{data.detalle}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <nav className="flex items-center gap-2 pt-1">
         <button

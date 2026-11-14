@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-contribute-saving-goal"
+description = "Enables the lifestyle_contribute_saving_goal command without any pre-configured scope."
+commands.allow = ["lifestyle_contribute_saving_goal"]
+
+[[permission]]
+identifier = "deny-lifestyle-contribute-saving-goal"
+description = "Denies the lifestyle_contribute_saving_goal command without any pre-configured scope."
+commands.deny = ["lifestyle_contribute_saving_goal"]

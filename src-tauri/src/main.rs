@@ -5,7 +5,7 @@ use axis_module_library::commands::LibraryState;
 use axis_module_repos::commands::ReposState;
 
 fn main() {
-    tauri::Builder::default()
+    if let Err(err) = tauri::Builder::default()
         .manage(LifestyleState::default())
         .manage(LibraryState::default())
         .manage(ReposState::default())
@@ -62,5 +62,8 @@ fn main() {
             axis_module_aurora::commands::aurora_run_dpo_consolidation,
         ])
         .run(tauri::generate_context!())
-        .expect("Error al ejecutar el núcleo de AXIS");
+    {
+        eprintln!("Error al ejecutar el núcleo de AXIS: {err}");
+        std::process::exit(1);
+    }
 }

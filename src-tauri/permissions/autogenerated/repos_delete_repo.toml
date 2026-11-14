@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-repos-delete-repo"
+description = "Enables the repos_delete_repo command without any pre-configured scope."
+commands.allow = ["repos_delete_repo"]
+
+[[permission]]
+identifier = "deny-repos-delete-repo"
+description = "Denies the repos_delete_repo command without any pre-configured scope."
+commands.deny = ["repos_delete_repo"]

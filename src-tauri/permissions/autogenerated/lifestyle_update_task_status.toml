@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-update-task-status"
+description = "Enables the lifestyle_update_task_status command without any pre-configured scope."
+commands.allow = ["lifestyle_update_task_status"]
+
+[[permission]]
+identifier = "deny-lifestyle-update-task-status"
+description = "Denies the lifestyle_update_task_status command without any pre-configured scope."
+commands.deny = ["lifestyle_update_task_status"]

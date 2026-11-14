@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-repos-add-repo"
+description = "Enables the repos_add_repo command without any pre-configured scope."
+commands.allow = ["repos_add_repo"]
+
+[[permission]]
+identifier = "deny-repos-add-repo"
+description = "Denies the repos_add_repo command without any pre-configured scope."
+commands.deny = ["repos_add_repo"]

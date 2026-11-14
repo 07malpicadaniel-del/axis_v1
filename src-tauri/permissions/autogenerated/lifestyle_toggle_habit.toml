@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lifestyle-toggle-habit"
+description = "Enables the lifestyle_toggle_habit command without any pre-configured scope."
+commands.allow = ["lifestyle_toggle_habit"]
+
+[[permission]]
+identifier = "deny-lifestyle-toggle-habit"
+description = "Denies the lifestyle_toggle_habit command without any pre-configured scope."
+commands.deny = ["lifestyle_toggle_habit"]

@@ -177,6 +177,510 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the ask_bob_agent command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-ask-bob-agent",
+          "markdownDescription": "Enables the ask_bob_agent command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_approve_order command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-approve-order",
+          "markdownDescription": "Enables the aurora_approve_order command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_get_pulse_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-get-pulse-status",
+          "markdownDescription": "Enables the aurora_get_pulse_status command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_get_subgrafo command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-get-subgrafo",
+          "markdownDescription": "Enables the aurora_get_subgrafo command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_get_telarana command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-get-telarana",
+          "markdownDescription": "Enables the aurora_get_telarana command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_health command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-health",
+          "markdownDescription": "Enables the aurora_health command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_launch_hunt command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-launch-hunt",
+          "markdownDescription": "Enables the aurora_launch_hunt command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_list_gatekeeper command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-list-gatekeeper",
+          "markdownDescription": "Enables the aurora_list_gatekeeper command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_reject_order command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-reject-order",
+          "markdownDescription": "Enables the aurora_reject_order command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_run_dpo_consolidation command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-run-dpo-consolidation",
+          "markdownDescription": "Enables the aurora_run_dpo_consolidation command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the aurora_trigger_opt_out command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-aurora-trigger-opt-out",
+          "markdownDescription": "Enables the aurora_trigger_opt_out command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the check_core_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-check-core-status",
+          "markdownDescription": "Enables the check_core_status command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the get_bob_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-get-bob-status",
+          "markdownDescription": "Enables the get_bob_status command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the library_create_item command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-library-create-item",
+          "markdownDescription": "Enables the library_create_item command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the library_delete_item command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-library-delete-item",
+          "markdownDescription": "Enables the library_delete_item command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the library_get_items command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-library-get-items",
+          "markdownDescription": "Enables the library_get_items command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the library_update_item command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-library-update-item",
+          "markdownDescription": "Enables the library_update_item command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_contribute_saving_goal command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-contribute-saving-goal",
+          "markdownDescription": "Enables the lifestyle_contribute_saving_goal command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_create_finance_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-create-finance-entry",
+          "markdownDescription": "Enables the lifestyle_create_finance_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_create_habit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-create-habit",
+          "markdownDescription": "Enables the lifestyle_create_habit command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_create_saving_goal command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-create-saving-goal",
+          "markdownDescription": "Enables the lifestyle_create_saving_goal command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_create_schedule_slot command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-create-schedule-slot",
+          "markdownDescription": "Enables the lifestyle_create_schedule_slot command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_create_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-create-task",
+          "markdownDescription": "Enables the lifestyle_create_task command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_delete_finance_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-delete-finance-entry",
+          "markdownDescription": "Enables the lifestyle_delete_finance_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_delete_habit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-delete-habit",
+          "markdownDescription": "Enables the lifestyle_delete_habit command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_delete_saving_goal command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-delete-saving-goal",
+          "markdownDescription": "Enables the lifestyle_delete_saving_goal command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_delete_schedule_slot command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-delete-schedule-slot",
+          "markdownDescription": "Enables the lifestyle_delete_schedule_slot command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_delete_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-delete-task",
+          "markdownDescription": "Enables the lifestyle_delete_task command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_get_finances command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-get-finances",
+          "markdownDescription": "Enables the lifestyle_get_finances command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_get_habits command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-get-habits",
+          "markdownDescription": "Enables the lifestyle_get_habits command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_get_saving_goals command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-get-saving-goals",
+          "markdownDescription": "Enables the lifestyle_get_saving_goals command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_get_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-get-schedule",
+          "markdownDescription": "Enables the lifestyle_get_schedule command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_get_tasks command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-get-tasks",
+          "markdownDescription": "Enables the lifestyle_get_tasks command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_toggle_habit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-toggle-habit",
+          "markdownDescription": "Enables the lifestyle_toggle_habit command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the lifestyle_update_task_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-lifestyle-update-task-status",
+          "markdownDescription": "Enables the lifestyle_update_task_status command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the repos_add_repo command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-repos-add-repo",
+          "markdownDescription": "Enables the repos_add_repo command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the repos_commit_and_push command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-repos-commit-and-push",
+          "markdownDescription": "Enables the repos_commit_and_push command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the repos_delete_repo command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-repos-delete-repo",
+          "markdownDescription": "Enables the repos_delete_repo command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the repos_get_details command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-repos-get-details",
+          "markdownDescription": "Enables the repos_get_details command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the repos_get_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-repos-get-list",
+          "markdownDescription": "Enables the repos_get_list command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the sync_bob_ecosystem command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-sync-bob-ecosystem",
+          "markdownDescription": "Enables the sync_bob_ecosystem command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the wake_bob_daemon command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-wake-bob-daemon",
+          "markdownDescription": "Enables the wake_bob_daemon command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the ask_bob_agent command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-ask-bob-agent",
+          "markdownDescription": "Denies the ask_bob_agent command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_approve_order command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-approve-order",
+          "markdownDescription": "Denies the aurora_approve_order command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_get_pulse_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-get-pulse-status",
+          "markdownDescription": "Denies the aurora_get_pulse_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_get_subgrafo command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-get-subgrafo",
+          "markdownDescription": "Denies the aurora_get_subgrafo command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_get_telarana command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-get-telarana",
+          "markdownDescription": "Denies the aurora_get_telarana command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_health command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-health",
+          "markdownDescription": "Denies the aurora_health command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_launch_hunt command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-launch-hunt",
+          "markdownDescription": "Denies the aurora_launch_hunt command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_list_gatekeeper command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-list-gatekeeper",
+          "markdownDescription": "Denies the aurora_list_gatekeeper command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_reject_order command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-reject-order",
+          "markdownDescription": "Denies the aurora_reject_order command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_run_dpo_consolidation command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-run-dpo-consolidation",
+          "markdownDescription": "Denies the aurora_run_dpo_consolidation command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the aurora_trigger_opt_out command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-aurora-trigger-opt-out",
+          "markdownDescription": "Denies the aurora_trigger_opt_out command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the check_core_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-check-core-status",
+          "markdownDescription": "Denies the check_core_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the get_bob_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-get-bob-status",
+          "markdownDescription": "Denies the get_bob_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the library_create_item command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-library-create-item",
+          "markdownDescription": "Denies the library_create_item command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the library_delete_item command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-library-delete-item",
+          "markdownDescription": "Denies the library_delete_item command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the library_get_items command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-library-get-items",
+          "markdownDescription": "Denies the library_get_items command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the library_update_item command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-library-update-item",
+          "markdownDescription": "Denies the library_update_item command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_contribute_saving_goal command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-contribute-saving-goal",
+          "markdownDescription": "Denies the lifestyle_contribute_saving_goal command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_create_finance_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-create-finance-entry",
+          "markdownDescription": "Denies the lifestyle_create_finance_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_create_habit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-create-habit",
+          "markdownDescription": "Denies the lifestyle_create_habit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_create_saving_goal command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-create-saving-goal",
+          "markdownDescription": "Denies the lifestyle_create_saving_goal command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_create_schedule_slot command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-create-schedule-slot",
+          "markdownDescription": "Denies the lifestyle_create_schedule_slot command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_create_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-create-task",
+          "markdownDescription": "Denies the lifestyle_create_task command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_delete_finance_entry command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-delete-finance-entry",
+          "markdownDescription": "Denies the lifestyle_delete_finance_entry command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_delete_habit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-delete-habit",
+          "markdownDescription": "Denies the lifestyle_delete_habit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_delete_saving_goal command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-delete-saving-goal",
+          "markdownDescription": "Denies the lifestyle_delete_saving_goal command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_delete_schedule_slot command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-delete-schedule-slot",
+          "markdownDescription": "Denies the lifestyle_delete_schedule_slot command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_delete_task command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-delete-task",
+          "markdownDescription": "Denies the lifestyle_delete_task command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_get_finances command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-get-finances",
+          "markdownDescription": "Denies the lifestyle_get_finances command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_get_habits command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-get-habits",
+          "markdownDescription": "Denies the lifestyle_get_habits command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_get_saving_goals command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-get-saving-goals",
+          "markdownDescription": "Denies the lifestyle_get_saving_goals command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_get_schedule command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-get-schedule",
+          "markdownDescription": "Denies the lifestyle_get_schedule command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_get_tasks command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-get-tasks",
+          "markdownDescription": "Denies the lifestyle_get_tasks command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_toggle_habit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-toggle-habit",
+          "markdownDescription": "Denies the lifestyle_toggle_habit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the lifestyle_update_task_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-lifestyle-update-task-status",
+          "markdownDescription": "Denies the lifestyle_update_task_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the repos_add_repo command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-repos-add-repo",
+          "markdownDescription": "Denies the repos_add_repo command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the repos_commit_and_push command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-repos-commit-and-push",
+          "markdownDescription": "Denies the repos_commit_and_push command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the repos_delete_repo command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-repos-delete-repo",
+          "markdownDescription": "Denies the repos_delete_repo command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the repos_get_details command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-repos-get-details",
+          "markdownDescription": "Denies the repos_get_details command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the repos_get_list command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-repos-get-list",
+          "markdownDescription": "Denies the repos_get_list command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the sync_bob_ecosystem command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-sync-bob-ecosystem",
+          "markdownDescription": "Denies the sync_bob_ecosystem command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the wake_bob_daemon command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-wake-bob-daemon",
+          "markdownDescription": "Denies the wake_bob_daemon command without any pre-configured scope."
+        },
+        {
           "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
           "type": "string",
           "const": "core:default",
