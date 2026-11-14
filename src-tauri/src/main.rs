@@ -48,6 +48,18 @@ fn main() {
             axis_module_repos::commands::repos_delete_repo,
             axis_module_repos::commands::repos_get_details,
             axis_module_repos::commands::repos_commit_and_push,
+
+            // Aurora v2 Commercial Intelligence & Gatekeeper
+            axis_module_aurora::commands::aurora_health,
+            axis_module_aurora::commands::aurora_launch_hunt,
+            axis_module_aurora::commands::aurora_get_telarana,
+            axis_module_aurora::commands::aurora_get_subgrafo,
+            axis_module_aurora::commands::aurora_list_gatekeeper,
+            axis_module_aurora::commands::aurora_approve_order,
+            axis_module_aurora::commands::aurora_reject_order,
+            axis_module_aurora::commands::aurora_trigger_opt_out,
+            axis_module_aurora::commands::aurora_get_pulse_status,
+            axis_module_aurora::commands::aurora_run_dpo_consolidation,
         ])
         .run(tauri::generate_context!())
         .expect("Error al ejecutar el núcleo de AXIS");

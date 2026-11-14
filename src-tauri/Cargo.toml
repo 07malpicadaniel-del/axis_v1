@@ -3,7 +3,8 @@ members = [
     "crates/axis-core",
     "crates/axis-module-lifestyle",
     "crates/axis-module-library",
-    "crates/axis-module-repos"
+    "crates/axis-module-repos",
+    "crates/axis-module-aurora"
 ]
 resolver = "2"
 
@@ -23,3 +24,4 @@ axis-core = { path = "crates/axis-core" }
 axis-module-lifestyle = { path = "crates/axis-module-lifestyle" }
 axis-module-library = { path = "crates/axis-module-library" }
 axis-module-repos = { path = "crates/axis-module-repos" }
+axis-module-aurora = { path = "crates/axis-module-aurora" }

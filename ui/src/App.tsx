@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sidebar, ProjectId } from './components/navigation/Sidebar';
 import { LifestyleModule } from './modules/lifestyle/LifestyleModule';
+import { AuroraModule } from './modules/aurora/AuroraModule';
 import { LibraryModule } from './modules/library/LibraryModule';
 import { ReposModule } from './modules/repos/ReposModule';
 import { BobModule } from './modules/bob/BobModule';
@@ -17,6 +18,7 @@ export function App() {
 
       <div className="flex-1 flex overflow-hidden">
         {activeProject === 'lifestyle' && <LifestyleModule />}
+        {activeProject === 'aurora' && <AuroraModule />}
         {activeProject === 'library' && <LibraryModule />}
         {activeProject === 'bob' && <BobModule />}
         {activeProject === 'repos' && <ReposModule />}
